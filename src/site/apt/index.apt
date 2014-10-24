@@ -1,3 +1,105 @@
 Wildfly Extension plugin
 
- Welcome to Wildfly Extension documentation.
+ Wildfly Extension plugin allows you to install your JBoss Module as an extension with subsystem configuration to WildFly server. 
+This is useful when writing or testing a JBoss subsystem.
+
+Usage
+
+ Plugin is currently only available in {{{https://clojars.org}clojars repo}}, to be able to use it in your project, you need to add following into your pom.xml:
+
++---
+    <pluginRepositories>
+        ...
+        <pluginRepository>
+            <id>clojars</id>
+            <name>clojars</name>
+            <url>https://clojars.org/repo</url>
+        </pluginRepository>
+        ...
+    </pluginRepositories>
++---
+
+Examples
+
+* Install to standalone profile
+
+ Example configuration to install JBoss module to <<standalone-full.xml>> server profile
+ 
++---
+    <profiles>
+        ...
+        <profile>
+            <id>install2wf</id>
+            <build>
+                <plugins>
+                    <plugin>
+                         <groupId>org.jboss.plugins</groupId>
+                         <artifactId>wildfly-extension-maven-plugin</artifactId>
+                         <version>0.2-SNAPSHOT</version>
+                         <configuration>
+                             <moduleZip>${project.build.directory}/module.zip</moduleZip>
+                             <jbossHome>/jboss/wildfly-8.1.0.Final</jbossHome>
+                             <serverConfig>standalone/configuration/standalone-full.xml</serverConfig>
+                             <subsystem>${basedir}/src/main/resources/standalone-subsystem.xml</subsystem>
+                         </configuration>
+                         <executions>
+                             <execution>
+                                 <id>build-dist</id>
+                                 <phase>install</phase>
+                                 <goals>
+                                    <goal>deploy</goal>
+                                 </goals>
+                            </execution>
+                         </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        ...
+    </profiles>
++--- 
+
+* Install to domain profile
+
+ Example configuration to install JBoss module to <<domain.xml>> to <<default>> server profile
+ 
++---
+    <profiles>
+        ...
+        <profile>
+            <id>install2wf</id>
+            <build>
+                <plugins>
+                    <plugin>
+                         <groupId>org.jboss.plugins</groupId>
+                         <artifactId>wildfly-extension-maven-plugin</artifactId>
+                         <version>0.2-SNAPSHOT</version>
+                         <configuration>
+                             <moduleZip>${project.build.directory}/module.zip</moduleZip>
+                             <jbossHome>/jboss/wildfly-8.1.0.Final</jbossHome>
+                             <serverConfig>domain/configuration/domain.xml</serverConfig>
+                             <subsystem>${basedir}/src/main/resources/domain-subsystem.xml</subsystem>
+                             <profiles>
+                                 <profile>default</profile>
+                             </profiles>
+                         </configuration>
+                         <executions>
+                             <execution>
+                                 <id>build-dist</id>
+                                 <phase>install</phase>
+                                 <goals>
+                                    <goal>deploy</goal>
+                                 </goals>
+                            </execution>
+                         </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        ....
+    </profiles>
++---
+
+ For more info about plugin configuration see {{{./deploy-mojo.html}wildfly-extension:deploy}} goal.
+
+
