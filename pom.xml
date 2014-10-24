@@ -25,7 +25,7 @@
 
   <groupId>org.jboss.plugins</groupId>
   <artifactId>wildfly-extension-maven-plugin</artifactId>
-  <version>0.1-SNAPSHOT</version>
+  <version>0.2-SNAPSHOT</version>
   <packaging>maven-plugin</packaging>
 
   <name>Wildfly Extension Installer Maven Plugin</name>
@@ -170,6 +170,13 @@
   	<name>Red Hat, Inc.</name>
   	<url>http://www.redhat.com/</url>
   </organization>
+    <developers>
+    <developer>
+      <id>lzoubek</id>
+      <name>Libor Zoubek</name>
+      <timezone>Europe/Prague</timezone>
+    </developer>
+  </developers>
   <distributionManagement>
     <repository>
       <id>clojars-repository</id>
