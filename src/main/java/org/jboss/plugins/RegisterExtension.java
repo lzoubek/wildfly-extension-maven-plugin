@@ -54,13 +54,14 @@ public class RegisterExtension {
 
 	/**
 	 * registers extension to standalone.xml
-	 * @param srcFile source file (standalone.xml)
-	 * @param destFile output file (standalone.xml with new stuf) 
+	 * @param srcFile source file (standalone.xml or domain.xml)
+	 * @param destFile output file (standalone.xml or domain.xml with new stuff)
+	 * @param profiles array of profiles (only applies if srcFile is domain.xml)
 	 * @param subsystem subsystem file (may not need exist)
 	 * @param moduleId ID of JBoss Module to register as an JBoss extension
 	 * @throws Exception
 	 */
-	public void register(File srcFile, File destFile, File subsystem,
+	public void register(File srcFile, File destFile, String[] profiles, File subsystem,
 			String moduleId) throws Exception {
 		try {
 			log.info("Register extension module="+moduleId);
@@ -70,6 +71,11 @@ public class RegisterExtension {
 			// we still need to read standalone.xml and subsystem.xml to DOM to be able to detect namespaces
 			Document srcDoc = dBuilder.parse(srcFile);
 			Document subsystemDoc = null;
+
+			// unset profiles in case we're not editing domain.xml
+			if (isStandaloneXml(srcDoc)) {
+				profiles = null;
+			}
 			
 			if (subsystem.isFile() && subsystem.canRead()) {
 				subsystemDoc = dBuilder.parse(subsystem);
@@ -77,15 +83,18 @@ public class RegisterExtension {
 			} else {
 				log.info("Subsystem file ["+subsystem+"] does not exist, subsystem will not be configured");
 			}
-			
+
 			// do XSL transformation
 			TransformerFactory f = TransformerFactory.newInstance();
 			Transformer t = f.newTransformer(new StreamSource(createStylesheet(
 					getNameSpace(srcDoc), moduleId, getNameSpace(subsystemDoc),
-					doc2string(subsystemDoc))));
+					doc2string(subsystemDoc),profiles)));
 			Source s = new StreamSource(srcFile);
 			Result r = new StreamResult(destFile);
 			t.setURIResolver(null);
+			t.setOutputProperty(OutputKeys.INDENT, "yes");
+			t.setOutputProperty(OutputKeys.STANDALONE, "yes");
+			t.setOutputProperty(OutputKeys.METHOD, "xml");
 			t.transform(s, r);
 			log.info("New serverConfig file written to ["+destFile.getAbsolutePath()+"]");
 
@@ -96,11 +105,13 @@ public class RegisterExtension {
 		}
 	}
 
-	private static InputStream createStylesheet(String namespace, String module,
-			String subns, String subsystem) throws IOException {
+	private InputStream createStylesheet(String namespace, String module,
+			String subns, String subsystem, String[] profileNames) throws IOException {
 		// when writing new nodes we'll ignore wring xmlns attribute
 		String ignoreNs = "s"; // s is main namespace for server config
 		boolean isSubsystem = subns != null && subsystem != null;
+
+		String profileSelector = createXPathProfileNameSelector(profileNames);
 
 		StringBuilder sheet = new StringBuilder("<?xml version=\"1.0\" ?>");
 		sheet.append("<xsl:stylesheet xmlns:xsl=\"http://www.w3.org/1999/XSL/Transform\""
@@ -112,28 +123,47 @@ public class RegisterExtension {
 		}
 		sheet.append(" exclude-result-prefixes=\"" + ignoreNs
 				+ "\" version=\"1.0\">");
-		sheet.append("<xsl:output method=\"xml\" indent=\"yes\" />");
+
+		// for both extensions and profiles we first copy all nodes by excluding potentially existing one and then we append new content
 
 		// append new extension
+		sheet.append("<xsl:variable name=\"extension\"><extension module=\""+ module+ "\" /></xsl:variable>");
 		sheet.append("<xsl:template match=\"s:extensions\"><xsl:copy><xsl:apply-templates select=\"*[not(@module='"
 				+ module
-				+ "')]\" /><extension module=\""
-				+ module
-				+ "\" /></xsl:copy></xsl:template>");
+				+ "')]|node()\" /></xsl:copy>"
+				+ "</xsl:template><xsl:template match=\"s:extension[last()]\"><xsl:copy-of select=\"$extension\" /></xsl:template>");
 
 		// append new subsystem
 		if (isSubsystem) {
-			sheet.append("<xsl:template match=\"s:profile\"><xsl:copy><xsl:apply-templates select=\"*[not(namespace-uri() ='"
+			sheet.append("<xsl:variable name=\"subsystem\">"+ subsystem+ "</xsl:variable>");
+			sheet.append("<xsl:template match=\"@s:profile"+profileSelector+"\"><xsl:copy><xsl:apply-templates select=\"*[not(namespace-uri() ='"
 					+ subns
-					+ "')]\" />"
-					+ subsystem
-					+ "</xsl:copy></xsl:template>");
+					+ "')]|node()\" /></xsl:copy>"
+					+ "</xsl:template><xsl:template match=\"s:profile"+profileSelector+"/*[last()]\"><xsl:copy-of select=\"$subsystem\" /></xsl:template>");
 		}
 
 		// generic identity template
 		sheet.append("<xsl:template match=\"@*|node()\"><xsl:copy><xsl:apply-templates select=\"@*|node()\" /></xsl:copy></xsl:template>");
 		sheet.append("</xsl:stylesheet>");
+		log.debug("XSL :"+sheet);
 		return new ByteArrayInputStream(IOUtil.toByteArray(sheet.toString()));
+	}
+
+	private static String createXPathProfileNameSelector(String[] profiles) {
+		if (profiles == null || profiles.length == 0) {
+			return "";
+		}
+		StringBuilder sb = new StringBuilder("[");
+		for (String profile : profiles) {
+			sb.append("@name='"+profile+"' or ");
+		}
+		sb.delete(sb.length()-4, sb.length());
+		sb.append("]");
+		return sb.toString();
+	}
+
+	private static boolean isStandaloneXml(Document doc) {
+		return "server".equals(doc.getDocumentElement().getNodeName());
 	}
 
 	/**

@@ -64,10 +64,16 @@ public class DeployExtensionMojo extends AbstractMojo {
 	private File jbossHome;
 	
 	/**
-	 * Location of standalone.xml to write to (can be either relative to jbossHome) or absolute
+	 * Location of server configuration file standalone.xml or domain.xml to write to (can be either relative to jbossHome or absolute)
 	 */
 	@Parameter(defaultValue = "standalone/configuration/standalone.xml", required = true)
-	private String standaloneXml;
+	private String serverConfig;
+	
+	/**
+	 * List of server profiles to set subsystem on (only applies when serverConfig is domain.xml) 
+	 */
+	@Parameter
+	private String[] profiles;
 
 	
 	/**
@@ -82,7 +88,7 @@ public class DeployExtensionMojo extends AbstractMojo {
     @Parameter(defaultValue = "false")
     private boolean skipDeploy;
 	
-	private File serverConfig;
+	private File serverConfigAbsolute;
 
 	public void execute() throws MojoExecutionException,MojoFailureException {
 		if (skipDeploy) {
@@ -106,7 +112,7 @@ public class DeployExtensionMojo extends AbstractMojo {
 		}
 
 		try {
-			module.registerExtension(serverConfig, subsystem);
+			module.registerExtension(serverConfigAbsolute, profiles, subsystem);
 			
 		} catch (Exception e) {
 			throw new MojoFailureException("Failed to register module : "+e.getMessage());
@@ -121,14 +127,14 @@ public class DeployExtensionMojo extends AbstractMojo {
 		if (!new File(jbossHome,"modules").isDirectory()) {
 			throw new MojoFailureException("jbossHome = "+jbossHome.getAbsolutePath()+" does not seem to point to AS7/WildFly installation dir");
 		}
-		if (new File(standaloneXml).isAbsolute()) {
-			serverConfig = new File(standaloneXml);
+		if (new File(serverConfig).isAbsolute()) {
+			serverConfigAbsolute = new File(serverConfig);
 		} else {
-			serverConfig = new File(jbossHome,standaloneXml);
+			serverConfigAbsolute = new File(jbossHome,serverConfig);
 		}
 		
-		if (!(serverConfig.exists() && serverConfig.isFile() && serverConfig.canWrite())) {
-			throw new MojoFailureException("standaloneXml = "+standaloneXml+" is not writable and existing file. [standaloneXml] must be either absolute path or relative to [jbossHome]");
+		if (!(serverConfigAbsolute.exists() && serverConfigAbsolute.isFile() && serverConfigAbsolute.canWrite())) {
+			throw new MojoFailureException("standaloneXml = "+serverConfig+" is not writable and existing file. [standaloneXml] must be either absolute path or relative to [jbossHome]");
 		}
 	}
 }
