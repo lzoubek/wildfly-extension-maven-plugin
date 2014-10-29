@@ -171,11 +171,13 @@ public class JBossModule {
 		}
 
 	}
-	
-	public void registerExtension(File serverConfig, String[] profiles, File subsystem) throws Exception {
+
+	public void registerExtension(RegisterOptions options) throws Exception {
+		File serverConfig = options.getServerConfig();
 		File serverConfigBackup = new File(serverConfig.getParentFile(),serverConfig.getName()+".old");
 		log.info("Backup original serverConfig ["+serverConfig.getAbsolutePath()+"] to ["+serverConfigBackup.getAbsolutePath()+"]");
 		FileUtils.copyFile(serverConfig, serverConfigBackup);		
-		new RegisterExtension(log).register(serverConfigBackup,serverConfig,profiles, subsystem,name);
+		new RegisterExtension(log).register(options.serverConfig(serverConfigBackup), serverConfig, name);
 	}
+
 }

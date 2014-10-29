@@ -54,42 +54,55 @@ public class RegisterExtension {
 
 	/**
 	 * registers extension to standalone.xml
-	 * @param srcFile source file (standalone.xml or domain.xml)
+	 * @param options
 	 * @param destFile output file (standalone.xml or domain.xml with new stuff)
-	 * @param profiles array of profiles (only applies if srcFile is domain.xml)
-	 * @param subsystem subsystem file (may not need exist)
 	 * @param moduleId ID of JBoss Module to register as an JBoss extension
 	 * @throws Exception
 	 */
-	public void register(File srcFile, File destFile, String[] profiles, File subsystem,
-			String moduleId) throws Exception {
+	public void register(RegisterOptions options, File destFile, String moduleId) throws Exception {
 		try {
 			log.info("Register extension module="+moduleId);
 			DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
 			DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
 			
 			// we still need to read standalone.xml and subsystem.xml to DOM to be able to detect namespaces
-			Document srcDoc = dBuilder.parse(srcFile);
+			Document srcDoc = dBuilder.parse(options.getServerConfig());
 			Document subsystemDoc = null;
+			Document socketBindingDoc = null;
 
 			// unset profiles in case we're not editing domain.xml
 			if (isStandaloneXml(srcDoc)) {
-				profiles = null;
+				options.profiles(null);
 			}
 			
-			if (subsystem.isFile() && subsystem.canRead()) {
-				subsystemDoc = dBuilder.parse(subsystem);
-				log.info("Configuring subsystem from file "+subsystem);
+			if (options.getSubsystem().isFile() && options.getSubsystem().canRead()) {
+				subsystemDoc = dBuilder.parse(options.getSubsystem());
+				log.info("Configuring subsystem from file "+options.getSubsystem());
 			} else {
-				log.info("Subsystem file ["+subsystem+"] does not exist, subsystem will not be configured");
+				log.info("Subsystem file ["+options.getSubsystem()+"] does not exist, subsystem will not be configured");
+			}
+			
+			if (options.getSocketBinding().isFile() && options.getSocketBinding().canRead()) {
+				socketBindingDoc = dBuilder.parse(options.getSocketBinding());
+				log.info("Configuring socket-binding from file "+options.getSocketBinding());
+			} else {
+				log.info("Socket-binding file ["+options.getSocketBinding()+"] does not exist, socket-binding will not be configured");
 			}
 
 			// do XSL transformation
 			TransformerFactory f = TransformerFactory.newInstance();
-			Transformer t = f.newTransformer(new StreamSource(createStylesheet(
-					getNameSpace(srcDoc), moduleId, getNameSpace(subsystemDoc),
-					doc2string(subsystemDoc),profiles)));
-			Source s = new StreamSource(srcFile);
+			
+			InputStream stylesheet = createStylesheet(
+					getNameSpace(srcDoc), 
+					moduleId, 
+					subsystemDoc,
+					options.getProfiles(),
+					socketBindingDoc,
+					options.getSocketBindingGroups()
+			);
+			
+			Transformer t = f.newTransformer(new StreamSource(stylesheet));
+			Source s = new StreamSource(options.getServerConfig());
 			Result r = new StreamResult(destFile);
 			t.setURIResolver(null);
 			t.setOutputProperty(OutputKeys.INDENT, "yes");
@@ -105,19 +118,19 @@ public class RegisterExtension {
 		}
 	}
 
-	private InputStream createStylesheet(String namespace, String module,
-			String subns, String subsystem, String[] profileNames) throws IOException {
+	private InputStream createStylesheet(String namespace, String module, Document subsystem, String[] profileNames, Document socketBinding, String[] socketBindingGroups) throws IOException {
 		// when writing new nodes we'll ignore wring xmlns attribute
 		String ignoreNs = "s"; // s is main namespace for server config
-		boolean isSubsystem = subns != null && subsystem != null;
-
-		String profileSelector = createXPathProfileNameSelector(profileNames);
+		String subns = "";
+		boolean isSubsystem = subsystem != null;
+		boolean isSocketBinding = socketBinding != null;
 
 		StringBuilder sheet = new StringBuilder("<?xml version=\"1.0\" ?>");
 		sheet.append("<xsl:stylesheet xmlns:xsl=\"http://www.w3.org/1999/XSL/Transform\""
 				+ " xmlns:s=\"" + namespace + "\"");
 		
 		if (isSubsystem) {
+			subns = getNameSpace(subsystem);
 			sheet.append(" xmlns:sub=\"" + subns + "\"");
 			ignoreNs += " sub"; // sub is namespace for subsystem we're setting up
 		}
@@ -135,11 +148,23 @@ public class RegisterExtension {
 
 		// append new subsystem
 		if (isSubsystem) {
-			sheet.append("<xsl:variable name=\"subsystem\">"+ subsystem+ "</xsl:variable>");
+			String profileSelector = createXPathNameAttributeSelector(profileNames);
+			sheet.append("<xsl:variable name=\"subsystem\">"+ doc2string(subsystem)+ "</xsl:variable>");
 			sheet.append("<xsl:template match=\"@s:profile"+profileSelector+"\"><xsl:copy><xsl:apply-templates select=\"*[not(namespace-uri() ='"
 					+ subns
 					+ "')]|node()\" /></xsl:copy>"
 					+ "</xsl:template><xsl:template match=\"s:profile"+profileSelector+"/*[last()]\"><xsl:copy-of select=\"$subsystem\" /></xsl:template>");
+		}
+		
+		// append new socket-binding
+		if (isSocketBinding) {
+			String sbgSelector = createXPathNameAttributeSelector(socketBindingGroups);
+			String bindingName = socketBinding.getDocumentElement().getAttribute("name");
+			sheet.append("<xsl:variable name=\"socketBinding\">"+ doc2string(socketBinding)+ "</xsl:variable>");
+			sheet.append("<xsl:template match=\"@s:socket-binding-group"+sbgSelector+"\"><xsl:copy><xsl:apply-templates select=\"*[not(@name='"
+					+ bindingName
+					+ "')]|node()\" /></xsl:copy>"
+					+ "</xsl:template><xsl:template match=\"s:socket-binding-group"+sbgSelector+"/*[last()]\"><xsl:copy-of select=\"$socketBinding\" /></xsl:template>");
 		}
 
 		// generic identity template
@@ -149,13 +174,13 @@ public class RegisterExtension {
 		return new ByteArrayInputStream(IOUtil.toByteArray(sheet.toString()));
 	}
 
-	private static String createXPathProfileNameSelector(String[] profiles) {
-		if (profiles == null || profiles.length == 0) {
+	private static String createXPathNameAttributeSelector(String[] names) {
+		if (names == null || names.length == 0) {
 			return "";
 		}
 		StringBuilder sb = new StringBuilder("[");
-		for (String profile : profiles) {
-			sb.append("@name='"+profile+"' or ");
+		for (String name : names) {
+			sb.append("@name='"+name+"' or ");
 		}
 		sb.delete(sb.length()-4, sb.length());
 		sb.append("]");

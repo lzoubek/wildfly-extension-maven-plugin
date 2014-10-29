@@ -21,22 +21,6 @@
  */
 package org.jboss.plugins;
 
-/*
- * Copyright 2001-2005 The Apache Software Foundation.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 import java.io.File;
 
 import org.apache.maven.plugin.AbstractMojo;
@@ -82,6 +66,19 @@ public class DeployExtensionMojo extends AbstractMojo {
 	@Parameter(defaultValue = "${basedir}/src/main/resources/subsystem.xml", required = true)
 	private File subsystem;
 	
+	/**
+	 * Location of socket-binding content to be inserted into standalone.xml
+	 */
+	@Parameter(defaultValue = "${basedir}/src/main/resources/socket-binding.xml", required = true)
+	private File socketBinding;
+	
+	/**
+	 * List of socket-binding-groups to set socketBinding in (only applies when socketBinding exists)
+	 * Default : ["standard-sockets"]
+	 */
+	@Parameter
+	private String[] socketBindingGroups = new String[] {"standard-sockets"};
+	
 	 /**
      * Whether to skip the execution of this mojo.
      */
@@ -112,7 +109,13 @@ public class DeployExtensionMojo extends AbstractMojo {
 		}
 
 		try {
-			module.registerExtension(serverConfigAbsolute, profiles, subsystem);
+			module.registerExtension(new RegisterOptions()
+				.serverConfig(serverConfigAbsolute)
+				.profiles(profiles)
+				.subsystem(subsystem)
+				.socketBinding(socketBinding)
+				.socketBindingGroups(socketBindingGroups)
+			);
 			
 		} catch (Exception e) {
 			throw new MojoFailureException("Failed to register module : "+e.getMessage());
