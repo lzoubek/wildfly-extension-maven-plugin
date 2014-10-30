@@ -1,7 +1,16 @@
 Wildfly Extension plugin
 
  Wildfly Extension plugin allows you to install your JBoss Module as an extension with subsystem configuration to WildFly server. 
-This is useful when writing or testing a JBoss subsystem.
+This is useful when writing or testing a JBoss subsystem. This plugin takes as input a <<moduleZip>> file, that you need to build on your own.
+
+
+Features
+
+ * Install JBoss module as extension to standalone or domain profiles
+
+ * Setup subsystem configuration
+
+ * Setup socket binding
 
 Usage
 
@@ -18,6 +27,11 @@ Usage
         ...
     </pluginRepositories>
 +---
+
+Requirements
+
+ * You need your JBoss module ZIP file ready from previous step of your build. 
+This can be done for example using {{{http://maven.apache.org/plugins/maven-assembly-plugin/}assemblly plugin}}. The module is layed down just by unzipping into WildFly/JBoss server root, make sure directory structure inside your ZIP is valid.
 
 Examples
 
@@ -61,7 +75,7 @@ Examples
 
 * Install to domain profile
 
- Example configuration to install JBoss module to <<domain.xml>> to <<default>> server profile
+ Example configuration to install JBoss module to <<domain.xml>> to <<default>> server <profile> and setup <socket-binding> for <<full-sockets>> socket-binding-group
  
 +---
     <profiles>
@@ -82,6 +96,10 @@ Examples
                              <profiles>
                                  <profile>default</profile>
                              </profiles>
+                             <socketBinding><${basedir}/src/main/resource/socket-binding.xml</socketBinding>
+                             <socketBindingGroups>
+                                 <socketBindingGroup>full-sockets</socketBindingGroup>
+                             </socketBindingGroups>
                          </configuration>
                          <executions>
                              <execution>
