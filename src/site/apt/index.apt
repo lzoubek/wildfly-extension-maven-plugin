@@ -31,7 +31,9 @@ Usage
 Requirements
 
  * You need your JBoss module ZIP file ready from previous step of your build. 
-This can be done for example using {{{http://maven.apache.org/plugins/maven-assembly-plugin/}assemblly plugin}}. The module is layed down just by unzipping into WildFly/JBoss server root, make sure directory structure inside your ZIP is valid.
+This can be done for example using {{{http://maven.apache.org/plugins/maven-assembly-plugin/}assemblly plugin}}. The module is layed down just by unzipping into
+<<jbossHome>> directory. This is the default, because your module can contain for example additional server configuration profiles. In case directory structure in module 
+does not have server home as it's root, you can set <<modulesHome>> configuration option to lay down your module to specified location (i.e <modules/system/layers/base> in WildFly)
 
 Examples
 
@@ -49,7 +51,7 @@ Examples
                     <plugin>
                          <groupId>org.jboss.plugins</groupId>
                          <artifactId>wildfly-extension-maven-plugin</artifactId>
-                         <version>0.2-SNAPSHOT</version>
+                         <version>0.4-SNAPSHOT</version>
                          <configuration>
                              <moduleZip>${project.build.directory}/module.zip</moduleZip>
                              <jbossHome>/jboss/wildfly-8.1.0.Final</jbossHome>
@@ -87,7 +89,7 @@ Examples
                     <plugin>
                          <groupId>org.jboss.plugins</groupId>
                          <artifactId>wildfly-extension-maven-plugin</artifactId>
-                         <version>0.2-SNAPSHOT</version>
+                         <version>0.4-SNAPSHOT</version>
                          <configuration>
                              <moduleZip>${project.build.directory}/module.zip</moduleZip>
                              <jbossHome>/jboss/wildfly-8.1.0.Final</jbossHome>
