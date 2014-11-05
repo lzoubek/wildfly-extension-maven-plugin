@@ -35,8 +35,10 @@ import org.apache.maven.plugins.annotations.Parameter;
  */
 @Mojo(name = "deploy", defaultPhase = LifecyclePhase.INSTALL)
 public class DeployExtensionMojo extends AbstractMojo {
+
 	/**
-	 * Location of JBoss input module
+	 * Location of JBoss input module.zip This file should have JBoss module directory structure so it can be laid down 
+	 * to modulesHome directory
 	 */
 	@Parameter(defaultValue = "${project.build.directory}/${project.artifactId}-module.zip", required = true)
 	private File moduleZip;
@@ -46,6 +48,13 @@ public class DeployExtensionMojo extends AbstractMojo {
 	 */
 	@Parameter(defaultValue = "${jboss.home}", required = true)
 	private File jbossHome;
+	
+	/**
+	 * Location of modules home (either relative to jbossHome or absolute). Set this value unless your structure inside moduleZip does not include path to modules.
+	 * For Wildfly, this path is "modules/system/layers/base", for older AS7 versions it's just "modules".
+	 */
+	@Parameter(defaultValue = "")
+	private String modulesHome;
 	
 	/**
 	 * Location of server configuration file standalone.xml or domain.xml to write to (can be either relative to jbossHome or absolute)
@@ -86,6 +95,7 @@ public class DeployExtensionMojo extends AbstractMojo {
     private boolean skipDeploy;
 	
 	private File serverConfigAbsolute;
+	private File modulesHomeAbsolute;
 
 	public void execute() throws MojoExecutionException,MojoFailureException {
 		if (skipDeploy) {
@@ -102,7 +112,7 @@ public class DeployExtensionMojo extends AbstractMojo {
 		}
 
 		try {
-			module.installTo(jbossHome);	
+			module.installTo(modulesHomeAbsolute);	
 		}	
 		catch (Exception e) {
 			throw new MojoFailureException("Failed to install module : "+e.getMessage());
@@ -130,14 +140,27 @@ public class DeployExtensionMojo extends AbstractMojo {
 		if (!new File(jbossHome,"modules").isDirectory()) {
 			throw new MojoFailureException("jbossHome = "+jbossHome.getAbsolutePath()+" does not seem to point to AS7/WildFly installation dir");
 		}
+		
 		if (new File(serverConfig).isAbsolute()) {
 			serverConfigAbsolute = new File(serverConfig);
 		} else {
 			serverConfigAbsolute = new File(jbossHome,serverConfig);
 		}
-		
 		if (!(serverConfigAbsolute.exists() && serverConfigAbsolute.isFile() && serverConfigAbsolute.canWrite())) {
-			throw new MojoFailureException("standaloneXml = "+serverConfig+" is not writable and existing file. [standaloneXml] must be either absolute path or relative to [jbossHome]");
+			throw new MojoFailureException("serverConfig = "+serverConfig+" is not writable and existing file. [serverConfig] must be either absolute path or relative to [jbossHome]");
+		}
+		
+		if (modulesHome == null) {
+			modulesHome = "";
+		}
+		
+		if (new File(modulesHome).isAbsolute()) {
+			modulesHomeAbsolute = new File(modulesHome);
+		} else {
+			modulesHomeAbsolute = new File(jbossHome, modulesHome);
+		}
+		if (!(modulesHomeAbsolute.exists() && modulesHomeAbsolute.isDirectory() && modulesHomeAbsolute.canWrite())) {
+			throw new MojoFailureException("modulesHome = "+modulesHome+" is not writable and existing directory. [modulesHome] must be either absolute path or relative to [jbossHome]");
 		}
 	}
 }
