@@ -23,6 +23,8 @@ package org.jboss.plugins;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringWriter;
@@ -42,6 +44,7 @@ import javax.xml.transform.stream.StreamSource;
 
 import org.apache.maven.plugin.logging.Log;
 import org.codehaus.plexus.util.IOUtil;
+import org.codehaus.plexus.util.xml.XmlUtil;
 import org.w3c.dom.Document;
 
 public class RegisterExtension {
@@ -104,11 +107,11 @@ public class RegisterExtension {
 			Transformer t = f.newTransformer(new StreamSource(stylesheet));
 			Source s = new StreamSource(options.getServerConfig());
 			Result r = new StreamResult(destFile);
-			t.setURIResolver(null);
 			t.setOutputProperty(OutputKeys.INDENT, "yes");
-			t.setOutputProperty(OutputKeys.STANDALONE, "yes");
 			t.setOutputProperty(OutputKeys.METHOD, "xml");
 			t.transform(s, r);
+			// finallly pretty-print output file (XSL transformation does not handle whitespace text nodes well)
+			formatXmlDocument(destFile);
 			log.info("New serverConfig file written to ["+destFile.getAbsolutePath()+"]");
 
 		} catch (TransformerConfigurationException e) {
@@ -138,22 +141,23 @@ public class RegisterExtension {
 				+ "\" version=\"1.0\">");
 
 		// for both extensions and profiles we first copy all nodes by excluding potentially existing one and then we append new content
-
+		
 		// append new extension
 		sheet.append("<xsl:variable name=\"extension\"><extension module=\""+ module+ "\" /></xsl:variable>");
 		sheet.append("<xsl:template match=\"s:extensions\"><xsl:copy><xsl:apply-templates select=\"*[not(@module='"
 				+ module
-				+ "')]|node()\" /></xsl:copy>"
-				+ "</xsl:template><xsl:template match=\"s:extension[last()]\"><xsl:copy-of select=\"$extension\" /></xsl:template>");
+				+ "')]\" /><xsl:copy-of select=\"$extension\" /></xsl:copy>"
+				+ "</xsl:template>");
 
 		// append new subsystem
 		if (isSubsystem) {
 			String profileSelector = createXPathNameAttributeSelector(profileNames);
 			sheet.append("<xsl:variable name=\"subsystem\">"+ doc2string(subsystem)+ "</xsl:variable>");
-			sheet.append("<xsl:template match=\"@s:profile"+profileSelector+"\"><xsl:copy><xsl:apply-templates select=\"*[not(namespace-uri() ='"
-					+ subns
-					+ "')]|node()\" /></xsl:copy>"
-					+ "</xsl:template><xsl:template match=\"s:profile"+profileSelector+"/*[last()]\"><xsl:copy-of select=\"$subsystem\" /></xsl:template>");
+			sheet.append("<xsl:template match=\"s:profile"+profileSelector+"\"><xsl:copy>"
+					+ "<xsl:apply-templates select=\"@*\" />"
+					+ "<xsl:apply-templates select=\"*[not(namespace-uri() ='"+ subns+ "')]\" />"
+					+ "<xsl:copy-of select=\"$subsystem\" /></xsl:copy>"
+					+ "</xsl:template>");
 		}
 		
 		// append new socket-binding
@@ -161,10 +165,11 @@ public class RegisterExtension {
 			String sbgSelector = createXPathNameAttributeSelector(socketBindingGroups);
 			String bindingName = socketBinding.getDocumentElement().getAttribute("name");
 			sheet.append("<xsl:variable name=\"socketBinding\">"+ doc2string(socketBinding)+ "</xsl:variable>");
-			sheet.append("<xsl:template match=\"@s:socket-binding-group"+sbgSelector+"\"><xsl:copy><xsl:apply-templates select=\"*[not(@name='"
-					+ bindingName
-					+ "')]|node()\" /></xsl:copy>"
-					+ "</xsl:template><xsl:template match=\"s:socket-binding-group"+sbgSelector+"/*[last()]\"><xsl:copy-of select=\"$socketBinding\" /></xsl:template>");
+			sheet.append("<xsl:template match=\"s:socket-binding-group"+sbgSelector+"\"><xsl:copy>"
+					+ "<xsl:apply-templates select=\"@*\" />"
+					+ "<xsl:apply-templates select=\"*[not(@name='"+ bindingName + "')]\" />"
+					+ "<xsl:copy-of select=\"$socketBinding\" /></xsl:copy>"
+					+ "</xsl:template>");
 		}
 
 		// generic identity template
@@ -202,13 +207,22 @@ public class RegisterExtension {
 		}
 		return doc.getDocumentElement().getAttribute("xmlns");
 	}
+	private void formatXmlDocument(File file) {
+		try {
+			InputStream is = new ByteArrayInputStream(IOUtil.toByteArray(new FileInputStream(file)));
+			XmlUtil.prettyFormat(is, new FileOutputStream(file),4,System.getProperty("line.separator"));
+			IOUtil.close(is);
+		} catch (Exception ex) {
+			throw new RuntimeException("Error formatting file "+file.getAbsolutePath(), ex);
+		}
+	}
 
 	/**
 	 * return content of XML document as string
 	 * @param doc
 	 * @return
 	 */
-	private static String doc2string(Document doc) {
+	private String doc2string(Document doc) {
 		if (doc == null) {
 			return null;
 		}
@@ -216,8 +230,7 @@ public class RegisterExtension {
 			StringWriter sw = new StringWriter();
 			TransformerFactory tf = TransformerFactory.newInstance();
 			Transformer transformer = tf.newTransformer();
-			transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION,
-					"yes");
+			transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION,"yes");
 			transformer.setOutputProperty(OutputKeys.METHOD, "xml");
 			transformer.setOutputProperty(OutputKeys.INDENT, "yes");
 			transformer.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
