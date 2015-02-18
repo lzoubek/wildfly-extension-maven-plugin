@@ -22,6 +22,7 @@
 package org.jboss.plugins;
 
 import java.io.File;
+import java.util.Collections;
 
 /**
  * this class just holds all inputs for changes to be made in standalone.xml or domain.xml
@@ -32,9 +33,10 @@ public class RegisterOptions {
 
 	private File serverConfig;
 	private File subsystem;
-	private String[] profiles;
 	private File socketBinding;
 	private String[] socketBindingGroups;
+	private Insert[] inserts;
+	String[] removes;
 	
 	public RegisterOptions() {
 		
@@ -54,19 +56,33 @@ public class RegisterOptions {
 		this.socketBinding = socketBinding;
 		return this;
 	}
-
-	public RegisterOptions profiles(String[] profiles) {
-		this.profiles = profiles;
-		return this;
-	}
 	
 	public RegisterOptions socketBindingGroups(String[] socketBindingGroups) {
 		this.socketBindingGroups = socketBindingGroups;
 		return this;
 	}
+	public RegisterOptions inserts(Insert[] inserts) {
+		this.inserts = inserts;
+		return this;
+	}
 
-	public String[] getProfiles() {
-		return profiles;
+	public Insert[] getInserts() {
+		if (inserts == null) {
+			inserts = new Insert[]{};
+		}
+		return inserts;
+	}
+	
+	public RegisterOptions removes(String[] removes) {
+		this.removes = removes;
+		return this;
+	}
+	
+	public String[] getRemoves() {
+		if (removes == null) {
+			removes = new String[]{};
+		}
+		return removes;
 	}
 
 	public File getServerConfig() {

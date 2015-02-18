@@ -57,16 +57,10 @@ public class DeployExtensionMojo extends AbstractMojo {
 	private String modulesHome;
 	
 	/**
-	 * Location of server configuration file standalone.xml or domain.xml to write to (can be either relative to jbossHome or absolute)
+	 * Location of server configuration file (standalone.xml) write to (can be either relative to jbossHome or absolute)
 	 */
 	@Parameter(defaultValue = "standalone/configuration/standalone.xml", required = true)
 	private String serverConfig;
-	
-	/**
-	 * List of server profiles to set subsystem on (only applies when serverConfig is domain.xml) 
-	 */
-	@Parameter
-	private String[] profiles;
 
 	
 	/**
@@ -87,6 +81,13 @@ public class DeployExtensionMojo extends AbstractMojo {
 	 */
 	@Parameter
 	private String[] socketBindingGroups = new String[] {"standard-sockets"};
+
+	/**
+	 * List of data to be inserted to serverConfig. This is pretty powerful stuff to put/replace any XML content
+	 * anywhere in serverConfig 
+	 */
+	@Parameter
+	private Insert[] edit; 
 	
 	 /**
      * Whether to skip the execution of this mojo.
@@ -121,13 +122,14 @@ public class DeployExtensionMojo extends AbstractMojo {
 		try {
 			module.registerExtension(new RegisterOptions()
 				.serverConfig(serverConfigAbsolute)
-				.profiles(profiles)
 				.subsystem(subsystem)
 				.socketBinding(socketBinding)
 				.socketBindingGroups(socketBindingGroups)
+				.inserts(edit)
 			);
 			
 		} catch (Exception e) {
+			getLog().error(e);
 			throw new MojoFailureException("Failed to register module : "+e.getMessage());
 		}	
 	}

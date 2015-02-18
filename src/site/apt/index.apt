@@ -11,18 +11,20 @@ Features
  * Setup subsystem configuration
 
  * Setup socket binding
+ 
+ * Edit or replace almost any piece of standalone.xml - this allows to modify other subsystems configurations to ie setup datasources, caches etc.
 
 Usage
 
- Plugin is currently only available in {{{https://clojars.org}clojars repo}}, to be able to use it in your project, you need to add following into your pom.xml:
+ Plugin is currently only available in {{{https://clojars.org}JBoss Releases repo}}, to be able to use it in your project, you need to add following into your pom.xml:
 
 +---
     <pluginRepositories>
         ...
         <pluginRepository>
-            <id>clojars</id>
-            <name>clojars</name>
-            <url>https://clojars.org/repo</url>
+            <id>jboss-releases</id>
+            <name>jboss-releases</name>
+            <url>https://repository.jboss.org/nexus/content/repositories/releases/</url>
         </pluginRepository>
         ...
     </pluginRepositories>
@@ -51,7 +53,7 @@ Examples
                     <plugin>
                          <groupId>org.jboss.plugins</groupId>
                          <artifactId>wildfly-extension-maven-plugin</artifactId>
-                         <version>0.4-SNAPSHOT</version>
+                         <version>0.5.0</version>
                          <configuration>
                              <moduleZip>${project.build.directory}/module.zip</moduleZip>
                              <jbossHome>/jboss/wildfly-8.1.0.Final</jbossHome>
@@ -75,9 +77,9 @@ Examples
     </profiles>
 +--- 
 
-* Install to domain profile
+* Advanced edit operations on standalone.xml
 
- Example configuration to install JBoss module to <<domain.xml>> to <<default>> server <profile> and setup <socket-binding> for <<full-sockets>> socket-binding-group
+ Example configuration to install JBoss module to <<standalone.xml>> and set's up new <socket-binding> and datasource
  
 +---
     <profiles>
@@ -89,19 +91,24 @@ Examples
                     <plugin>
                          <groupId>org.jboss.plugins</groupId>
                          <artifactId>wildfly-extension-maven-plugin</artifactId>
-                         <version>0.4-SNAPSHOT</version>
+                         <version>0.5.0</version>
                          <configuration>
                              <moduleZip>${project.build.directory}/module.zip</moduleZip>
                              <jbossHome>/jboss/wildfly-8.1.0.Final</jbossHome>
-                             <serverConfig>domain/configuration/domain.xml</serverConfig>
-                             <subsystem>${basedir}/src/main/resources/domain-subsystem.xml</subsystem>
-                             <profiles>
-                                 <profile>default</profile>
-                             </profiles>
-                             <socketBinding><${basedir}/src/main/resource/socket-binding.xml</socketBinding>
-                             <socketBindingGroups>
-                                 <socketBindingGroup>full-sockets</socketBindingGroup>
-                             </socketBindingGroups>
+                             <serverConfig>standalone/configuration/standalone.xml</serverConfig>
+                             <subsystem>${basedir}/src/main/resources/subsystem.xml</subsystem>
+                             <edit>
+                                 <insert>
+                                     <select>/server/socket-binding-group[@name='standard-sockets']</select>
+                                     <xml><[CDATA[<socket-binding name="name" port="12345"]]></xml>
+                                     <attribute>name</attribute>
+                                 </insert>
+                                 <insert>
+                                     <select>/server/*[namespace-uri()='urn:jboss:domain:datasources:2.0']/*[@local-name()='datasources']</select>
+                                     <content>src/main/resources/datasource.xml</content>
+                                     <attribute>jndi-name</attribute>
+                                 </insert>
+                              </edit>
                          </configuration>
                          <executions>
                              <execution>
@@ -119,6 +126,12 @@ Examples
         ....
     </profiles>
 +---
+
+ Above example shows how to embed XML content into <xml> element (first <insert>). Also note <attribute> element. By specifying it you can make sure your content (in our case 
+ socket-binding) get's replaced when we run plugin over and over and at some point you decide to change the port. By default, plugin is able to ensure content identity 
+ by taking all attributes and it's values from the root of inserted content - without <attribute> 2nd socket-binding would be produced. Second <insert> puts datasource from separate file. 
+ Note that given <select> must workaround XML namespaces. Again <jndi-name> attribute is being used to identify our datasource, in this case though it's jndi-name is root attribute
+ in <src/main/resources/datasource.xml> file. Also note that <subsystem> element is only a shortcut to <insert> putting content to the right place.  
 
  For more info about plugin configuration see {{{./deploy-mojo.html}wildfly-extension:deploy}} goal.
 
