@@ -1,4 +1,4 @@
-package org.jboss.plugins;
+package org.wildfly.plugins;
 
 import java.io.File;
 /**

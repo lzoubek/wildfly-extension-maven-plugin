@@ -1,4 +1,4 @@
-package org.jboss.plugins;
+package org.wildfly.plugins;
 
 import java.io.File;
 import java.io.FileReader;
@@ -18,6 +18,9 @@ import org.codehaus.plexus.util.IOUtil;
 import org.junit.Test;
 import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
+import org.wildfly.plugins.Insert;
+import org.wildfly.plugins.NamespaceContextImpl;
+import org.wildfly.plugins.XmlConfigBuilder;
 import org.xml.sax.InputSource;
 
 

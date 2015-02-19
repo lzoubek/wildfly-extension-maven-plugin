@@ -23,13 +23,13 @@
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
-  <groupId>org.jboss.plugins</groupId>
+  <groupId>org.wildfly.plugins</groupId>
   <artifactId>wildfly-extension-maven-plugin</artifactId>
   <version>0.5.0</version>
   <packaging>maven-plugin</packaging>
 
   <name>Wildfly Extension Installer Maven Plugin</name>
-  <description>A maven plugin that allows you install Wildfly module as an Wildfly extension and setup subsystem</description>
+  <description>Maven plugin that allows you install Wildfly module as a Wildfly extension and setup subsystem</description>
   <url>http://lzoubek.github.io/wildfly-extension-maven-plugin</url>
 
   <properties>
@@ -179,9 +179,9 @@
   </developers>
   <distributionManagement>
     <repository>
-      <id>clojars-repository</id>
-      <name>Clojars Repository</name>
-      <url>https://clojars.org/repo</url>
+      <id>jboss-releases-repository</id>
+      <name>JBoss Releases Repository</name>
+      <url>https://repository.jboss.org/nexus/service/local/staging/deploy/maven2/</url>
     </repository>
   </distributionManagement>
   <scm>
