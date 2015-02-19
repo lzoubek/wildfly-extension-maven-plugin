@@ -16,7 +16,7 @@ Features
 
 Usage
 
- Plugin is currently only available in {{{https://clojars.org}JBoss Releases repo}}, to be able to use it in your project, you need to add following into your pom.xml:
+ Plugin is currently only available in {{{https://repository.jboss.org/nexus/content/repositories/releases}JBoss Releases repo}}, to be able to use it in your project, you need to add following into your pom.xml:
 
 +---
     <pluginRepositories>
@@ -51,7 +51,7 @@ Examples
             <build>
                 <plugins>
                     <plugin>
-                         <groupId>org.jboss.plugins</groupId>
+                         <groupId>org.wildfly.plugins</groupId>
                          <artifactId>wildfly-extension-maven-plugin</artifactId>
                          <version>0.5.0</version>
                          <configuration>
@@ -89,7 +89,7 @@ Examples
             <build>
                 <plugins>
                     <plugin>
-                         <groupId>org.jboss.plugins</groupId>
+                         <groupId>org.wildfly.plugins</groupId>
                          <artifactId>wildfly-extension-maven-plugin</artifactId>
                          <version>0.5.0</version>
                          <configuration>
