@@ -1,6 +1,6 @@
 /*
  * JBoss, Home of Professional Open Source.
- * Copyright 2014, Red Hat, Inc., and individual contributors
+ * Copyright 2015, Red Hat, Inc., and individual contributors
  * as indicated by the @author tags. See the copyright.txt file in the
  * distribution for a full listing of individual contributors.
  *
@@ -29,6 +29,7 @@ import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
+import org.codehaus.plexus.util.FileUtils;
 
 /**
  * Goal which deploys JBoss module to JBoss AS7/WildFly server
@@ -40,7 +41,7 @@ public class DeployExtensionMojo extends AbstractMojo {
 	 * Location of JBoss input module.zip This file should have JBoss module directory structure so it can be laid down 
 	 * to modulesHome directory
 	 */
-	@Parameter(defaultValue = "${project.build.directory}/${project.artifactId}-module.zip", required = true)
+	@Parameter()
 	private File moduleZip;
 
 	/**
@@ -59,20 +60,26 @@ public class DeployExtensionMojo extends AbstractMojo {
 	/**
 	 * Location of server configuration file (standalone.xml) write to (can be either relative to jbossHome or absolute)
 	 */
-	@Parameter(defaultValue = "standalone/configuration/standalone.xml", required = true)
+	@Parameter(defaultValue = "standalone/configuration/standalone.xml")
 	private String serverConfig;
+	
+	/**
+	 * Location where plugin will backup original server configuration file (standalone.xml) - can be either relative to jbossHome or absolute
+	 */
+	@Parameter(defaultValue = "standalone/configuration/standalone.xml.old")
+	private String serverConfigBackup;
 
 	
 	/**
 	 * Location of subsystem content to be inserted into standalone.xml
 	 */
-	@Parameter(defaultValue = "${basedir}/src/main/resources/subsystem.xml", required = true)
+	@Parameter()
 	private File subsystem;
 	
 	/**
 	 * Location of socket-binding content to be inserted into standalone.xml
 	 */
-	@Parameter(defaultValue = "${basedir}/src/main/resources/socket-binding.xml", required = true)
+	@Parameter()
 	private File socketBinding;
 	
 	/**
@@ -87,7 +94,13 @@ public class DeployExtensionMojo extends AbstractMojo {
 	 * anywhere in serverConfig 
 	 */
 	@Parameter
-	private Insert[] edit; 
+	private Insert[] edit;
+	
+	/**
+	 * Fails the build if any of <strong>select</strong> expression within <strong>edit</strong> does not match any node (thus it wouldn't update serverConfig)
+	 */
+	@Parameter
+	private boolean failNoMatch;
 	
 	 /**
      * Whether to skip the execution of this mojo.
@@ -96,6 +109,7 @@ public class DeployExtensionMojo extends AbstractMojo {
     private boolean skipDeploy;
 	
 	private File serverConfigAbsolute;
+	private File serverConfigBackupAbsolute;
 	private File modulesHomeAbsolute;
 
 	public void execute() throws MojoExecutionException,MojoFailureException {
@@ -105,33 +119,52 @@ public class DeployExtensionMojo extends AbstractMojo {
 		}
 		validConfiguration();
 		JBossModule module = null;
-		try {
-			module = JBossModule.readFromZipFile(getLog(), moduleZip);
-		}
-		catch (Exception e) {
-			throw new MojoFailureException("Failed to read module : "+e.getMessage());
-		}
+		if (moduleZip != null) {
+			try {
+				module = JBossModule.readFromZipFile(getLog(), moduleZip);
+			}
+			catch (Exception e) {
+				throw new MojoFailureException("Failed to read module : "+e.getMessage());
+			}
 
-		try {
-			module.installTo(modulesHomeAbsolute);	
-		}	
-		catch (Exception e) {
-			throw new MojoFailureException("Failed to install module : "+e.getMessage());
+			try {
+				module.installTo(modulesHomeAbsolute);	
+			}	
+			catch (Exception e) {
+				throw new MojoFailureException("Failed to install module : "+e.getMessage());
+			}
 		}
+		// stay silent if the module.zip does not exist
 
-		try {
-			module.registerExtension(new RegisterOptions()
+		try {			
+			RegisterOptions options = new RegisterOptions();
+			if (module != null) {
+				options.withExtension(module.getModuleId());
+			}
+			
+			options
 				.serverConfig(serverConfigAbsolute)
+				.serverConfigBackup(serverConfigBackupAbsolute)
 				.subsystem(subsystem)
 				.socketBinding(socketBinding)
 				.socketBindingGroups(socketBindingGroups)
 				.inserts(edit)
-			);
+				.failNoMatch(failNoMatch);
+
+			register(options);
+			
 			
 		} catch (Exception e) {
 			getLog().error(e);
-			throw new MojoFailureException("Failed to register module : "+e.getMessage());
+			throw new MojoFailureException("Failed to update server configuration file : "+e.getMessage());
 		}	
+	}
+	
+	public void register(RegisterOptions options) throws Exception {
+		File serverConfig = options.getServerConfig();
+		getLog().info("Backup original serverConfig ["+serverConfig.getAbsolutePath()+"] to ["+options.getServerConfigBackup().getAbsolutePath()+"]");
+		FileUtils.copyFile(serverConfig, options.getServerConfigBackup());		
+		new RegisterExtension(getLog()).register(options);
 	}
 	
 	
@@ -150,6 +183,15 @@ public class DeployExtensionMojo extends AbstractMojo {
 		}
 		if (!(serverConfigAbsolute.exists() && serverConfigAbsolute.isFile() && serverConfigAbsolute.canWrite())) {
 			throw new MojoFailureException("serverConfig = "+serverConfig+" is not writable and existing file. [serverConfig] must be either absolute path or relative to [jbossHome]");
+		}
+		
+		if (new File(serverConfigBackup).isAbsolute()) {
+			serverConfigBackupAbsolute = new File(serverConfigBackup);
+		} else {
+			serverConfigBackupAbsolute = new File(jbossHome,serverConfigBackup);
+		}
+		if (!(serverConfigBackupAbsolute.getParentFile().exists() && serverConfigAbsolute.getParentFile().isDirectory() && serverConfigAbsolute.getParentFile().canWrite())) {
+			throw new MojoFailureException("serverConfigBackup = "+serverConfigBackup+" 's parent directory does not exist or is writable. [serverConfigBackup] must be either absolute path or relative to [jbossHome]");
 		}
 		
 		if (modulesHome == null) {

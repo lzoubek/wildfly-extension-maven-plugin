@@ -6,13 +6,13 @@ This is useful when writing or testing a JBoss subsystem. This plugin takes as i
 
 Features
 
- * Install JBoss module as extension to standalone or domain profiles
+ * Install JBoss module as extension to standalone server profile
 
  * Setup subsystem configuration
 
  * Setup socket binding
  
- * Edit or replace almost any piece of standalone.xml - this allows to modify other subsystems configurations to ie setup datasources, caches etc.
+ * Edit and/or replace almost any piece of standalone.xml - this allows to modify other subsystems configurations to ie. setup datasources, caches etc.
 
 Usage
 
@@ -39,7 +39,7 @@ does not have server home as it's root, you can set <<modulesHome>> configuratio
 
 Examples
 
-* Install to standalone profile
+* Install extension to standalone profile
 
  Example configuration to install JBoss module to <<standalone-full.xml>> server profile
  
@@ -53,7 +53,7 @@ Examples
                     <plugin>
                          <groupId>org.wildfly.plugins</groupId>
                          <artifactId>wildfly-extension-maven-plugin</artifactId>
-                         <version>0.5.0</version>
+                         <version>0.6.0</version>
                          <configuration>
                              <moduleZip>${project.build.directory}/module.zip</moduleZip>
                              <jbossHome>/jboss/wildfly-8.1.0.Final</jbossHome>
@@ -79,7 +79,7 @@ Examples
 
 * Advanced edit operations on standalone.xml
 
- Example configuration to install JBoss module to <<standalone.xml>> and set's up new <socket-binding> and datasource
+ Example configuration only edits <<standalone.xml>> and set's up new <socket-binding> and datasource without installing a module (which includes registering it as JBoss extension) and setting up subsystem.
  
 +---
     <profiles>
@@ -91,16 +91,14 @@ Examples
                     <plugin>
                          <groupId>org.wildfly.plugins</groupId>
                          <artifactId>wildfly-extension-maven-plugin</artifactId>
-                         <version>0.5.0</version>
+                         <version>0.6.0</version>
                          <configuration>
-                             <moduleZip>${project.build.directory}/module.zip</moduleZip>
                              <jbossHome>/jboss/wildfly-8.1.0.Final</jbossHome>
                              <serverConfig>standalone/configuration/standalone.xml</serverConfig>
-                             <subsystem>${basedir}/src/main/resources/subsystem.xml</subsystem>
                              <edit>
                                  <insert>
                                      <select>/server/socket-binding-group[@name='standard-sockets']</select>
-                                     <xml><[CDATA[<socket-binding name="name" port="12345"]]></xml>
+                                     <xml><![CDATA[<socket-binding name="foo" port="12345"/>]]></xml>
                                      <attribute>name</attribute>
                                  </insert>
                                  <insert>
@@ -127,10 +125,13 @@ Examples
     </profiles>
 +---
 
- Above example shows how to embed XML content into <xml> element (first <insert>). Also note <attribute> element. By specifying it you can make sure your content (in our case 
+ Above example shows how to embed XML content into <xml> element (first <insert>). Also note optional <attribute> element. By specifying it you can make sure your content (in our case 
  socket-binding) get's replaced when we run plugin over and over and at some point you decide to change the port. By default, plugin is able to ensure content identity 
- by taking all attributes and it's values from the root of inserted content - without <attribute> 2nd socket-binding would be produced. Second <insert> puts datasource from separate file. 
- Note that given <select> must workaround XML namespaces. Again <jndi-name> attribute is being used to identify our datasource, in this case though it's jndi-name is root attribute
+ by taking all attributes and it's values from the root of inserted content - without <attribute> plugin would internally create an XPath <socket-binding[@name='foo' and @port='12345']> to detect if given content should
+ be inserted or updated - if you decide to change the port, this would lead to addition if another <socket-binding>. With <attribute> specified it creates <socket-binding[@name='foo']>, thus <socket-binding> is always updated.
+ 
+ Second <insert> puts datasource from separate file. 
+ Note that given <select> must workaround XML namespaces. Again <jndi-name> attribute is being used to identify our datasource, in this case though it's jndi-name is root attribute name
  in <src/main/resources/datasource.xml> file. Also note that <subsystem> element is only a shortcut to <insert> putting content to the right place.  
 
  For more info about plugin configuration see {{{./deploy-mojo.html}wildfly-extension:deploy}} goal.

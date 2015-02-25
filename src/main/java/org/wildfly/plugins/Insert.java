@@ -69,8 +69,9 @@ public class Insert {
 	public String toString() {
 		return  new StringBuilder("insert [")
 		.append("select="+this.select)
-		.append(" content="+this.content)
-		.append(" xml="+this.xml)
+		.append(content == null ? ""   : " content="+content)
+		.append(attribute == null ? "" : " attribute="+attribute)
+		.append(xml == null ? ""       : " xml="+this.xml)
 		.append("]").toString();
 	}
 	

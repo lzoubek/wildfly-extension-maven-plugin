@@ -41,6 +41,7 @@ public class XmlConfigBuilder {
 	private static final Pattern NS_IN_XPATH = Pattern.compile("namespace-uri\\(\\)[^\']+\'([^\']+)");
 	private List<Insert> inserts;
 	private List<Remove> removes;
+	private boolean failNoMatch;
 	private final File targetFile;
 	private final File sourceFile;
 	final DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
@@ -117,6 +118,9 @@ public class XmlConfigBuilder {
 			try {
 				NodeList nl = (NodeList)expr.evaluate(srcDoc, XPathConstants.NODESET);
 				if (nl.getLength() == 0) {
+					if (failNoMatch) {
+						throw new Exception("Failed to update ["+targetFile.getAbsolutePath()+"] "+insert+" does not select any element");
+					}
 					warning(insert+" does not select any element");
 					continue;
 				}
@@ -304,6 +308,11 @@ public class XmlConfigBuilder {
 	public XmlConfigBuilder remove(Remove remove) throws Exception{
 		validateRemove(remove);
 		getRemoves().add(remove);
+		return this;
+	}
+	
+	public XmlConfigBuilder failNoMatch(boolean failNoMatch) throws Exception{
+		this.failNoMatch = failNoMatch;
 		return this;
 	}
 	

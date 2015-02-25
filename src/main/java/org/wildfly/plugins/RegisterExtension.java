@@ -21,7 +21,6 @@
  */
 package org.wildfly.plugins;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -43,25 +42,29 @@ public class RegisterExtension {
 	 * @param moduleId ID of JBoss Module to register as an JBoss extension
 	 * @throws Exception
 	 */
-	public void register(RegisterOptions options, File destFile, String moduleId) throws Exception {
-		log.info("Register extension module="+moduleId);
+	public void register(RegisterOptions options) throws Exception {
 		List<Insert> inserts = new ArrayList<Insert>();
 		inserts.addAll(Arrays.asList(options.getInserts()));
-		inserts.add(new Insert("/server/extensions","<extension module=\""+moduleId+"\"/>"));
+		if (options.getModuleId() != null) {
+			log.info("Register extension module="+options.getModuleId());		
+			inserts.add(new Insert("/server/extensions","<extension module=\""+options.getModuleId()+"\"/>"));	
+		}
+		
 		if (options.getSubsystem() != null) {
 			inserts.add(new Insert("/server/profile", options.getSubsystem()));
 		}
-		if (options.getSocketBindingGroups() != null) {
+		if (options.getSocketBindingGroups() != null && options.getSocketBinding() != null) {
 			for (String group : options.getSocketBindingGroups()) {
 				inserts.add(new Insert("/server/socket-binding-group[@name='"+group+"']",options.getSocketBinding())
 				.withAttribute("name"));
 			}
 		}
-		new XmlConfigBuilder(this.log, options.getServerConfig(), destFile)
+		new XmlConfigBuilder(this.log, options.getServerConfigBackup(), options.getServerConfig())
 		.inserts(inserts)
+		.failNoMatch(options.isFailNoMatch())
 		.build();
 		
-		log.info("New serverConfig file written to ["+destFile.getAbsolutePath()+"]");
+		log.info("New serverConfig file written to ["+options.getServerConfig().getAbsolutePath()+"]");
 	}
 
 

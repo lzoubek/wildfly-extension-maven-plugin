@@ -22,7 +22,6 @@
 package org.wildfly.plugins;
 
 import java.io.File;
-import java.util.Collections;
 
 /**
  * this class just holds all inputs for changes to be made in standalone.xml or domain.xml
@@ -32,16 +31,34 @@ import java.util.Collections;
 public class RegisterOptions {
 
 	private File serverConfig;
+	private File serverConfigBackup;
 	private File subsystem;
 	private File socketBinding;
 	private String[] socketBindingGroups;
 	private Insert[] inserts;
 	String[] removes;
+	private String moduleId;
+	private boolean failNoMatch;
 	
 	public RegisterOptions() {
 		
 	}
+	
+	public RegisterOptions failNoMatch(boolean failNoMatch) {
+		this.failNoMatch = failNoMatch;
+		return this;
+	}
+	
+	public RegisterOptions withExtension(String moduleId) {
+		this.moduleId = moduleId;
+		return this;
+	}
 
+	public RegisterOptions serverConfigBackup(File serverConfigBackup) {
+		this.serverConfigBackup = serverConfigBackup;
+		return this;
+	}
+	
 	public RegisterOptions serverConfig(File serverConfig) {
 		this.serverConfig = serverConfig;
 		return this;
@@ -96,8 +113,21 @@ public class RegisterOptions {
 	public File getSubsystem() {
 		return subsystem;
 	}
+
 	public String[] getSocketBindingGroups() {
 		return socketBindingGroups;
+	}
+
+	public String getModuleId() {
+		return moduleId;
+	}
+
+	public File getServerConfigBackup() {
+		return serverConfigBackup;
+	}
+
+	public boolean isFailNoMatch() {
+		return failNoMatch;
 	}
 	
 }

@@ -49,12 +49,16 @@ public class JBossModule {
 
 	private final Log log;
 	private File root;
-	private String name;
+	private String moduleId;
 	private boolean isZip = false;
 	private List<String> resources = new ArrayList<String>();
 	
 	private JBossModule(Log log) {
 		this.log = log;
+	}
+	
+	public String getModuleId() {
+		return moduleId;
 	}
 	
 	public static JBossModule readFromZipFile(Log log, File moduleZip) throws Exception {
@@ -97,7 +101,7 @@ public class JBossModule {
 	}
 	
 	private void readModuleXmlInfo(Document doc) throws Exception {
-		this.name = doc.getDocumentElement().getAttribute("name");
+		this.moduleId = doc.getDocumentElement().getAttribute("name");
 		XPath xPath =  XPathFactory.newInstance().newXPath();
 		NodeList nodeList = (NodeList) xPath.compile("//resources/resource-root").evaluate(doc, XPathConstants.NODESET);
 		for (int i = 0; i < nodeList.getLength();i++) {
@@ -151,7 +155,7 @@ public class JBossModule {
 	            }
 	        }
 		} else {
-			File targetDir = new File(jbossHome,"modules"+File.separator+name.replaceAll("\\.", File.separator)+File.separator+"main");
+			File targetDir = new File(jbossHome,"modules"+File.separator+moduleId.replaceAll("\\.", File.separator)+File.separator+"main");
 			if (!targetDir.exists() && !targetDir.mkdirs()) {
 				throw new MojoFailureException("Failed to create module directory "+targetDir.getAbsolutePath());
 			}
@@ -170,14 +174,6 @@ public class JBossModule {
 			FileUtils.copyFileToDirectory(moduleFile, targetDir);
 		}
 
-	}
-
-	public void registerExtension(RegisterOptions options) throws Exception {
-		File serverConfig = options.getServerConfig();
-		File serverConfigBackup = new File(serverConfig.getParentFile(),serverConfig.getName()+".old");
-		log.info("Backup original serverConfig ["+serverConfig.getAbsolutePath()+"] to ["+serverConfigBackup.getAbsolutePath()+"]");
-		FileUtils.copyFile(serverConfig, serverConfigBackup);		
-		new RegisterExtension(log).register(options.serverConfig(serverConfigBackup), serverConfig, name);
 	}
 
 }
