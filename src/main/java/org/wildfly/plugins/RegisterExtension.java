@@ -28,45 +28,43 @@ import java.util.List;
 import org.apache.maven.plugin.logging.Log;
 
 public class RegisterExtension {
-	
-	final Log log;
-	
-	public RegisterExtension(Log log) {
-		this.log = log;
-	}
 
-	/**
-	 * registers extension to standalone.xml
-	 * @param options
-	 * @param destFile output file (standalone.xml or domain.xml with new stuff)
-	 * @param moduleId ID of JBoss Module to register as an JBoss extension
-	 * @throws Exception
-	 */
-	public void register(RegisterOptions options) throws Exception {
-		List<Insert> inserts = new ArrayList<Insert>();
-		inserts.addAll(Arrays.asList(options.getInserts()));
-		if (options.getModuleId() != null) {
-			log.info("Register extension module="+options.getModuleId());		
-			inserts.add(new Insert("/server/extensions","<extension module=\""+options.getModuleId()+"\"/>"));	
-		}
-		
-		if (options.getSubsystem() != null) {
-			inserts.add(new Insert("/server/profile", options.getSubsystem()));
-		}
-		if (options.getSocketBindingGroups() != null && options.getSocketBinding() != null) {
-			for (String group : options.getSocketBindingGroups()) {
-				inserts.add(new Insert("/server/socket-binding-group[@name='"+group+"']",options.getSocketBinding())
-				.withAttribute("name"));
-			}
-		}
-		new XmlConfigBuilder(this.log, options.getServerConfigBackup(), options.getServerConfig())
-		.inserts(inserts)
-		.failNoMatch(options.isFailNoMatch())
-		.build();
-		
-		log.info("New serverConfig file written to ["+options.getServerConfig().getAbsolutePath()+"]");
-	}
+    final Log log;
 
+    public RegisterExtension(Log log) {
+        this.log = log;
+    }
 
+    /**
+     * registers extension to standalone.xml
+     * 
+     * @param options
+     * @param destFile
+     *            output file (standalone.xml or domain.xml with new stuff)
+     * @param moduleId
+     *            ID of JBoss Module to register as an JBoss extension
+     * @throws Exception
+     */
+    public void register(RegisterOptions options) throws Exception {
+        List<Insert> inserts = new ArrayList<Insert>();
+        inserts.addAll(Arrays.asList(options.getInserts()));
+        if (options.getModuleId() != null) {
+            log.info("Register extension module=" + options.getModuleId());
+            inserts.add(new Insert("/server/extensions", "<extension module=\"" + options.getModuleId() + "\"/>"));
+        }
+
+        if (options.getSubsystem() != null) {
+            inserts.add(new Insert("/server/profile", options.getSubsystem()));
+        }
+        if (options.getSocketBindingGroups() != null && options.getSocketBinding() != null) {
+            for (String group : options.getSocketBindingGroups()) {
+                inserts.add(new Insert("/server/socket-binding-group[@name='" + group + "']", options.getSocketBinding()).withAttribute("name"));
+            }
+        }
+        new XmlConfigBuilder(this.log, options.getServerConfigBackup(), options.getServerConfig()).inserts(inserts)
+                .failNoMatch(options.isFailNoMatch()).build();
+
+        log.info("New serverConfig file written to [" + options.getServerConfig().getAbsolutePath() + "]");
+    }
 
 }

@@ -1,6 +1,6 @@
 /*
  * JBoss, Home of Professional Open Source.
- * Copyright 2014, Red Hat, Inc., and individual contributors
+ * Copyright 2015, Red Hat, Inc., and individual contributors
  * as indicated by the @author tags. See the copyright.txt file in the
  * distribution for a full listing of individual contributors.
  *
@@ -47,28 +47,28 @@ import org.w3c.dom.NodeList;
 
 public class JBossModule {
 
-	private final Log log;
-	private File root;
-	private String moduleId;
-	private boolean isZip = false;
-	private List<String> resources = new ArrayList<String>();
-	
-	private JBossModule(Log log) {
-		this.log = log;
-	}
-	
-	public String getModuleId() {
-		return moduleId;
-	}
-	
-	public static JBossModule readFromZipFile(Log log, File moduleZip) throws Exception {
-		JBossModule m = new JBossModule(log);
-		m.isZip = true;
-		m.root = moduleZip;
-		if (!(moduleZip.canRead() && moduleZip.isFile())) {
-			throw new FileNotFoundException("File "+moduleZip.getAbsolutePath()+" does not exist");
-		}
-		ZipInputStream zin = null;
+    private final Log log;
+    private File root;
+    private String moduleId;
+    private boolean isZip = false;
+    private List<String> resources = new ArrayList<String>();
+
+    private JBossModule(Log log) {
+        this.log = log;
+    }
+
+    public String getModuleId() {
+        return moduleId;
+    }
+
+    public static JBossModule readFromZipFile(Log log, File moduleZip) throws Exception {
+        JBossModule m = new JBossModule(log);
+        m.isZip = true;
+        m.root = moduleZip;
+        if (!(moduleZip.canRead() && moduleZip.isFile())) {
+            throw new FileNotFoundException("File " + moduleZip.getAbsolutePath() + " does not exist");
+        }
+        ZipInputStream zin = null;
         BufferedInputStream bin = null;
         boolean moduleXmlFound = false;
         try {
@@ -77,17 +77,19 @@ public class JBossModule {
             ZipEntry ze = null;
             while ((ze = zin.getNextEntry()) != null) {
                 if (ze.getName().endsWith("module.xml")) {
-                	moduleXmlFound = true;
-                	DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
-            		DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
-            		Document doc = dBuilder.parse(zin);
-            		m.readModuleXmlInfo(doc);
+                    moduleXmlFound = true;
+                    DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
+                    DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
+                    Document doc = dBuilder.parse(zin);
+                    m.readModuleXmlInfo(doc);
                     break;
                 }
             }
         } finally {
             try {
-                // it should be enough to close the latest created stream in case of chained (nested) streams, @see http://www.javapractices.com/topic/TopicAction.do?Id=8
+                // it should be enough to close the latest created stream in
+                // case of chained (nested) streams, @see
+                // http://www.javapractices.com/topic/TopicAction.do?Id=8
                 if (zin != null) {
                     zin.close();
                 }
@@ -95,85 +97,88 @@ public class JBossModule {
             }
         }
         if (!moduleXmlFound) {
-        	throw new FileNotFoundException("module.xml was not found in "+moduleZip.getAbsolutePath());
+            throw new FileNotFoundException("module.xml was not found in " + moduleZip.getAbsolutePath());
         }
-		return m;
-	}
-	
-	private void readModuleXmlInfo(Document doc) throws Exception {
-		this.moduleId = doc.getDocumentElement().getAttribute("name");
-		XPath xPath =  XPathFactory.newInstance().newXPath();
-		NodeList nodeList = (NodeList) xPath.compile("//resources/resource-root").evaluate(doc, XPathConstants.NODESET);
-		for (int i = 0; i < nodeList.getLength();i++) {
-			this.resources.add(nodeList.item(i).getAttributes().getNamedItem("path").getTextContent());
-		}
-	}
-	
-	public static JBossModule readFromDir(Log log,File rootDir) throws Exception {
-		JBossModule m = new JBossModule(log);
-		m.root = rootDir;
-		File moduleFile = new File(rootDir, "module.xml");
-		if (!moduleFile.exists() || !moduleFile.canRead()) {
-			throw new FileNotFoundException("File "+moduleFile.getAbsolutePath()+" does not exist");
-		}
-		DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
-		DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
-		Document doc = dBuilder.parse(moduleFile);
-		m.readModuleXmlInfo(doc);		
-		return m;
-	}
-	
-	public void installTo(File jbossHome) throws Exception {
-		if (isZip) {
-			ZipInputStream zin = null;
-			FileOutputStream fos;
-			log.info("Extracting module ["+this.root.getAbsolutePath()+"] to ["+jbossHome.getAbsolutePath()+"]");
-	        try {
-	            zin = new ZipInputStream(new FileInputStream(this.root));
-	            ZipEntry ze = null;
-	            while ((ze = zin.getNextEntry()) != null) {
-	            	String fileName = ze.getName();
-	                File newFile = new File(jbossHome + File.separator + fileName);
-	                if (!ze.isDirectory()) {
-		                log.info("Writing "+newFile.getAbsolutePath());
-		                File parent = newFile.getParentFile();
-		                if (!parent.exists()) {
-		                	parent.mkdirs();
-		                }
-		                fos = new FileOutputStream(newFile);
-		                IOUtil.copy(zin, fos);
-		                IOUtil.close(fos);	                	
-	                }
-	            }
-	        } finally {
-	            try {
-	                // it should be enough to close the latest created stream in case of chained (nested) streams, @see http://www.javapractices.com/topic/TopicAction.do?Id=8
-	                if (zin != null) {
-	                    zin.close();
-	                }
-	            } catch (IOException ex) {
-	            }
-	        }
-		} else {
-			File targetDir = new File(jbossHome,"modules"+File.separator+moduleId.replaceAll("\\.", File.separator)+File.separator+"main");
-			if (!targetDir.exists() && !targetDir.mkdirs()) {
-				throw new MojoFailureException("Failed to create module directory "+targetDir.getAbsolutePath());
-			}
-			File moduleFile = new File(this.root, "module.xml");
-			for (String r : resources) {
-				File resource = new File(root,r);
-				if (!(resource.canRead())) {
-					throw new MojoFailureException("Resource file ["+r+"] referenced in ["+moduleFile.getAbsolutePath()+"] does not exist, fix ");
-				}
-				if (resource.isFile()) {
-					FileUtils.copyFileToDirectory(resource, targetDir);
-				} else if (resource.isDirectory()) {
-					FileUtils.copyDirectoryStructure(resource, targetDir);
-				}
-			}
-			FileUtils.copyFileToDirectory(moduleFile, targetDir);
-		}
+        return m;
+    }
 
-	}
+    private void readModuleXmlInfo(Document doc) throws Exception {
+        this.moduleId = doc.getDocumentElement().getAttribute("name");
+        XPath xPath = XPathFactory.newInstance().newXPath();
+        NodeList nodeList = (NodeList) xPath.compile("//resources/resource-root").evaluate(doc, XPathConstants.NODESET);
+        for (int i = 0; i < nodeList.getLength(); i++) {
+            this.resources.add(nodeList.item(i).getAttributes().getNamedItem("path").getTextContent());
+        }
+    }
+
+    public static JBossModule readFromDir(Log log, File rootDir) throws Exception {
+        JBossModule m = new JBossModule(log);
+        m.root = rootDir;
+        File moduleFile = new File(rootDir, "module.xml");
+        if (!moduleFile.exists() || !moduleFile.canRead()) {
+            throw new FileNotFoundException("File " + moduleFile.getAbsolutePath() + " does not exist");
+        }
+        DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
+        DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
+        Document doc = dBuilder.parse(moduleFile);
+        m.readModuleXmlInfo(doc);
+        return m;
+    }
+
+    public void installTo(File jbossHome) throws Exception {
+        if (isZip) {
+            ZipInputStream zin = null;
+            FileOutputStream fos;
+            log.info("Extracting module [" + this.root.getAbsolutePath() + "] to [" + jbossHome.getAbsolutePath() + "]");
+            try {
+                zin = new ZipInputStream(new FileInputStream(this.root));
+                ZipEntry ze = null;
+                while ((ze = zin.getNextEntry()) != null) {
+                    String fileName = ze.getName();
+                    File newFile = new File(jbossHome + File.separator + fileName);
+                    if (!ze.isDirectory()) {
+                        log.info("Writing " + newFile.getAbsolutePath());
+                        File parent = newFile.getParentFile();
+                        if (!parent.exists()) {
+                            parent.mkdirs();
+                        }
+                        fos = new FileOutputStream(newFile);
+                        IOUtil.copy(zin, fos);
+                        IOUtil.close(fos);
+                    }
+                }
+            } finally {
+                try {
+                    // it should be enough to close the latest created stream in
+                    // case of chained (nested) streams, @see
+                    // http://www.javapractices.com/topic/TopicAction.do?Id=8
+                    if (zin != null) {
+                        zin.close();
+                    }
+                } catch (IOException ex) {
+                }
+            }
+        } else {
+            File targetDir = new File(jbossHome, "modules" + File.separator + moduleId.replaceAll("\\.", File.separator) + File.separator + "main");
+            if (!targetDir.exists() && !targetDir.mkdirs()) {
+                throw new MojoFailureException("Failed to create module directory " + targetDir.getAbsolutePath());
+            }
+            File moduleFile = new File(this.root, "module.xml");
+            for (String r : resources) {
+                File resource = new File(root, r);
+                if (!(resource.canRead())) {
+                    throw new MojoFailureException("Resource file [" + r + "] referenced in [" + moduleFile.getAbsolutePath()
+                            + "] does not exist, fix ");
+                }
+                if (resource.isFile()) {
+                    FileUtils.copyFileToDirectory(resource, targetDir);
+                } else if (resource.isDirectory()) {
+                    FileUtils.copyDirectoryStructure(resource, targetDir);
+                }
+            }
+            FileUtils.copyFileToDirectory(moduleFile, targetDir);
+        }
+
+    }
 
 }

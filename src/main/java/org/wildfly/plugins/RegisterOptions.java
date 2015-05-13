@@ -1,6 +1,6 @@
 /*
  * JBoss, Home of Professional Open Source.
- * Copyright 2014, Red Hat, Inc., and individual contributors
+ * Copyright 2015, Red Hat, Inc., and individual contributors
  * as indicated by the @author tags. See the copyright.txt file in the
  * distribution for a full listing of individual contributors.
  *
@@ -24,110 +24,113 @@ package org.wildfly.plugins;
 import java.io.File;
 
 /**
- * this class just holds all inputs for changes to be made in standalone.xml or domain.xml
+ * this class just holds all inputs for changes to be made in standalone.xml or
+ * domain.xml
+ * 
  * @author lzoubek
- *
+ * 
  */
 public class RegisterOptions {
 
-	private File serverConfig;
-	private File serverConfigBackup;
-	private File subsystem;
-	private File socketBinding;
-	private String[] socketBindingGroups;
-	private Insert[] inserts;
-	String[] removes;
-	private String moduleId;
-	private boolean failNoMatch;
-	
-	public RegisterOptions() {
-		
-	}
-	
-	public RegisterOptions failNoMatch(boolean failNoMatch) {
-		this.failNoMatch = failNoMatch;
-		return this;
-	}
-	
-	public RegisterOptions withExtension(String moduleId) {
-		this.moduleId = moduleId;
-		return this;
-	}
+    private File serverConfig;
+    private File serverConfigBackup;
+    private File subsystem;
+    private File socketBinding;
+    private String[] socketBindingGroups;
+    private Insert[] inserts;
+    String[] removes;
+    private String moduleId;
+    private boolean failNoMatch;
 
-	public RegisterOptions serverConfigBackup(File serverConfigBackup) {
-		this.serverConfigBackup = serverConfigBackup;
-		return this;
-	}
-	
-	public RegisterOptions serverConfig(File serverConfig) {
-		this.serverConfig = serverConfig;
-		return this;
-	}
+    public RegisterOptions() {
 
-	public RegisterOptions subsystem(File subsystem) {
-		this.subsystem = subsystem;
-		return this;
-	}
+    }
 
-	public RegisterOptions socketBinding(File socketBinding) {
-		this.socketBinding = socketBinding;
-		return this;
-	}
-	
-	public RegisterOptions socketBindingGroups(String[] socketBindingGroups) {
-		this.socketBindingGroups = socketBindingGroups;
-		return this;
-	}
-	public RegisterOptions inserts(Insert[] inserts) {
-		this.inserts = inserts;
-		return this;
-	}
+    public RegisterOptions failNoMatch(boolean failNoMatch) {
+        this.failNoMatch = failNoMatch;
+        return this;
+    }
 
-	public Insert[] getInserts() {
-		if (inserts == null) {
-			inserts = new Insert[]{};
-		}
-		return inserts;
-	}
-	
-	public RegisterOptions removes(String[] removes) {
-		this.removes = removes;
-		return this;
-	}
-	
-	public String[] getRemoves() {
-		if (removes == null) {
-			removes = new String[]{};
-		}
-		return removes;
-	}
+    public RegisterOptions withExtension(String moduleId) {
+        this.moduleId = moduleId;
+        return this;
+    }
 
-	public File getServerConfig() {
-		return serverConfig;
-	}
+    public RegisterOptions serverConfigBackup(File serverConfigBackup) {
+        this.serverConfigBackup = serverConfigBackup;
+        return this;
+    }
 
-	public File getSocketBinding() {
-		return socketBinding;
-	}
+    public RegisterOptions serverConfig(File serverConfig) {
+        this.serverConfig = serverConfig;
+        return this;
+    }
 
-	public File getSubsystem() {
-		return subsystem;
-	}
+    public RegisterOptions subsystem(File subsystem) {
+        this.subsystem = subsystem;
+        return this;
+    }
 
-	public String[] getSocketBindingGroups() {
-		return socketBindingGroups;
-	}
+    public RegisterOptions socketBinding(File socketBinding) {
+        this.socketBinding = socketBinding;
+        return this;
+    }
 
-	public String getModuleId() {
-		return moduleId;
-	}
+    public RegisterOptions socketBindingGroups(String[] socketBindingGroups) {
+        this.socketBindingGroups = socketBindingGroups;
+        return this;
+    }
 
-	public File getServerConfigBackup() {
-		return serverConfigBackup;
-	}
+    public RegisterOptions inserts(Insert[] inserts) {
+        this.inserts = inserts;
+        return this;
+    }
 
-	public boolean isFailNoMatch() {
-		return failNoMatch;
-	}
-	
+    public Insert[] getInserts() {
+        if (inserts == null) {
+            inserts = new Insert[] {};
+        }
+        return inserts;
+    }
+
+    public RegisterOptions removes(String[] removes) {
+        this.removes = removes;
+        return this;
+    }
+
+    public String[] getRemoves() {
+        if (removes == null) {
+            removes = new String[] {};
+        }
+        return removes;
+    }
+
+    public File getServerConfig() {
+        return serverConfig;
+    }
+
+    public File getSocketBinding() {
+        return socketBinding;
+    }
+
+    public File getSubsystem() {
+        return subsystem;
+    }
+
+    public String[] getSocketBindingGroups() {
+        return socketBindingGroups;
+    }
+
+    public String getModuleId() {
+        return moduleId;
+    }
+
+    public File getServerConfigBackup() {
+        return serverConfigBackup;
+    }
+
+    public boolean isFailNoMatch() {
+        return failNoMatch;
+    }
+
 }
