@@ -197,8 +197,7 @@ public class XmlConfigBuilder {
     }
 
     /**
-     * looks for most recent namespace query in xpath (denoted by
-     * namespace-uri()='')
+     * looks for most recent namespace query in xpath (denoted by namespace-uri()='')
      * 
      * @param expression
      * @return

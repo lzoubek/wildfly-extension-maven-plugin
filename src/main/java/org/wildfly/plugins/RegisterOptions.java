@@ -24,8 +24,7 @@ package org.wildfly.plugins;
 import java.io.File;
 
 /**
- * this class just holds all inputs for changes to be made in standalone.xml or
- * domain.xml
+ * this class just holds all inputs for changes to be made in standalone.xml or domain.xml
  * 
  * @author lzoubek
  * 

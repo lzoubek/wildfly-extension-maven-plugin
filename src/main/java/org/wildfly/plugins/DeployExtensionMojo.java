@@ -48,18 +48,15 @@ import static org.twdata.maven.mojoexecutor.MojoExecutor.*;
 public class DeployExtensionMojo extends AbstractMojo {
 
     /**
-     * Location of JBoss input module.zip This file should have JBoss module
-     * directory structure so it can be laid down to {@link #modulesHome}
+     * Location of JBoss input module.zip This file should have JBoss module directory structure so it can be laid down to {@link #modulesHome}
      * directory.
      */
     @Parameter()
     private File moduleZip;
 
     /**
-     * An alternative to {@link #moduleZip} parameter. This parameter has higher
-     * priority than {@link #moduleZip}. A string of the form
-     * groupId:artifactId:version[:packaging][:classifier]. Default for
-     * packaging is <strong>zip</strong> and for classifier it's
+     * An alternative to {@link #moduleZip} parameter. This parameter has higher priority than {@link #moduleZip}. A string of the form
+     * groupId:artifactId:version[:packaging][:classifier]. Default for packaging is <strong>zip</strong> and for classifier it's
      * <strong>module</strong>
      * 
      * @since 0.7
@@ -74,24 +71,20 @@ public class DeployExtensionMojo extends AbstractMojo {
     private File jbossHome;
 
     /**
-     * Location of modules home (either relative to {@link #jbossHome} or
-     * absolute). Set this value unless your structure inside {@link #moduleZip}
-     * does not include path to modules. For Wildfly, this path is
-     * "modules/system/layers/base", for older AS7 versions it's just "modules".
+     * Location of modules home (either relative to {@link #jbossHome} or absolute). Set this value unless your structure inside {@link #moduleZip}
+     * does not include path to modules. For Wildfly, this path is "modules/system/layers/base", for older AS7 versions it's just "modules".
      */
     @Parameter(defaultValue = "modules/system/layers/base")
     private String modulesHome;
 
     /**
-     * Location of server configuration file (standalone.xml) write to (can be
-     * either relative to jbossHome or absolute)
+     * Location of server configuration file (standalone.xml) write to (can be either relative to jbossHome or absolute)
      */
     @Parameter(defaultValue = "standalone/configuration/standalone.xml")
     private String serverConfig;
 
     /**
-     * Location where plugin will backup original server configuration file
-     * (standalone.xml) - can be either relative to {@link #jbossHome} or
+     * Location where plugin will backup original server configuration file (standalone.xml) - can be either relative to {@link #jbossHome} or
      * absolute
      */
     @Parameter(defaultValue = "standalone/configuration/standalone.xml.old")
@@ -110,24 +103,21 @@ public class DeployExtensionMojo extends AbstractMojo {
     private File socketBinding;
 
     /**
-     * List of socket-binding-groups to set socketBinding in (only applies when
-     * socketBinding exists) Default : ["standard-sockets"]
+     * List of socket-binding-groups to set socketBinding in (only applies when socketBinding exists) Default : ["standard-sockets"]
      */
     @Parameter
     private String[] socketBindingGroups = new String[] { "standard-sockets" };
 
     /**
-     * List of data to be inserted to {@link #serverConfig}. This is pretty
-     * powerful stuff to put/replace any XML content anywhere in
+     * List of data to be inserted to {@link #serverConfig}. This is pretty powerful stuff to put/replace any XML content anywhere in
      * {@link #serverConfig}
      */
     @Parameter
     private Insert[] edit;
 
     /**
-     * Fails the build if any of <strong>select</strong> expression within
-     * <strong>edit</strong> does not match any node (thus it wouldn't update
-     * serverConfig)
+     * Fails the build if any of <strong>select</strong> expression within {@link #edit} does not match any node (thus it wouldn't update
+     * {@link #serverConfig})
      */
     @Parameter
     private boolean failNoMatch;
@@ -222,14 +212,9 @@ public class DeployExtensionMojo extends AbstractMojo {
         executeMojo(
                 plugin(groupId("org.apache.maven.plugins"), artifactId("maven-dependency-plugin"), version("2.10")),
                 goal("copy"),
-                configuration(
-                        element(name("outputDirectory"), tmpOutputDir), 
-                        element(name("overWriteIfNewer"), "true"),
-                        element(name("overWriteReleases"), "true"), 
-                        element(name("overWriteSnapshots"), "true"),
-                        element(name("stripClassifier"), "true"),
-                        element(name("stripVersion"), "true"), 
-                        element(name("artifact"), gav)),
+                configuration(element(name("outputDirectory"), tmpOutputDir), element(name("overWriteIfNewer"), "true"),
+                        element(name("overWriteReleases"), "true"), element(name("overWriteSnapshots"), "true"),
+                        element(name("stripClassifier"), "true"), element(name("stripVersion"), "true"), element(name("artifact"), gav)),
                 executionEnvironment(mavenProject, mavenSession, pluginManager));
 
         moduleTempFile = String.valueOf(evalPluginParameterExpression(tmpOutputDir + "/" + moduleTempFile));
