@@ -32,10 +32,10 @@ Usage
 
 Requirements
 
- * You need your JBoss module ZIP file ready from previous step of your build. 
-This can be done for example using {{{http://maven.apache.org/plugins/maven-assembly-plugin/}assemblly plugin}}. The module is layed down just by unzipping into
-<<jbossHome>> directory. This is the default, because your module can contain for example additional server configuration profiles. In case directory structure in module 
-does not have server home as it's root, you can set <<modulesHome>> configuration option to lay down your module to specified location (i.e <modules/system/layers/base> in WildFly)
+ * You need your JBoss module ZIP file ready from previous step of your build. This can be done for example using {{{http://maven.apache.org/plugins/maven-assembly-plugin/}assemblly plugin}}. 
+ Second way to obtain module.zip is specifying Maven GAV, so the plugin can pull the ZIP from repository.The module is layed down just by unzipping into <<jbossHome>> directory. 
+ In case directory structure in module does not have server home as it's root, you can set <<modulesHome>> configuration option to lay down your 
+ module to specified location (i.e <modules/system/layers/base> in WildFly)
 
 Examples
 
@@ -53,7 +53,7 @@ Examples
                     <plugin>
                          <groupId>org.wildfly.plugins</groupId>
                          <artifactId>wildfly-extension-maven-plugin</artifactId>
-                         <version>0.6.0</version>
+                         <version>0.7.0</version>
                          <configuration>
                              <moduleZip>${project.build.directory}/module.zip</moduleZip>
                              <jbossHome>/jboss/wildfly-8.1.0.Final</jbossHome>
@@ -77,6 +77,43 @@ Examples
     </profiles>
 +--- 
 
+* Install extension from existing module
+
+ Example configuration takes JBoss module from Maven repository. This is done by specifying <artifact>. Note that <<groupId:artifactId:1.0.0-SNAPSHOT>> must be also defined
+ among depenencies in your pom.xml.
+ 
++---
+    <profiles>
+        ...
+        <profile>
+            <id>install2wf</id>
+            <build>
+                <plugins>
+                    <plugin>
+                         <groupId>org.wildfly.plugins</groupId>
+                         <artifactId>wildfly-extension-maven-plugin</artifactId>
+                         <version>0.7.0</version>
+                         <configuration>
+                             <artifact>groupId:artifactId:1.0.0-SNAPSHOT</artifact>
+                             <jbossHome>/jboss/wildfly-8.1.0.Final</jbossHome>
+                         </configuration>
+                         <executions>
+                             <execution>
+                                 <id>build-dist</id>
+                                 <phase>install</phase>
+                                 <goals>
+                                    <goal>deploy</goal>
+                                 </goals>
+                            </execution>
+                         </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        ...
+    </profiles>
++---  
+
 * Advanced edit operations on standalone.xml
 
  Example configuration only edits <<standalone.xml>> and set's up new <socket-binding> and datasource without installing a module (which includes registering it as JBoss extension) and setting up subsystem.
@@ -91,7 +128,7 @@ Examples
                     <plugin>
                          <groupId>org.wildfly.plugins</groupId>
                          <artifactId>wildfly-extension-maven-plugin</artifactId>
-                         <version>0.6.0</version>
+                         <version>0.7.0</version>
                          <configuration>
                              <jbossHome>/jboss/wildfly-8.1.0.Final</jbossHome>
                              <serverConfig>standalone/configuration/standalone.xml</serverConfig>
