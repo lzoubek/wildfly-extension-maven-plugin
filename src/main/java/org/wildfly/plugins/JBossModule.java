@@ -137,7 +137,7 @@ public class JBossModule {
                     String fileName = ze.getName();
                     File newFile = new File(jbossHome + File.separator + fileName);
                     if (!ze.isDirectory()) {
-                        log.info("Writing " + newFile.getAbsolutePath());
+                        log.debug("Writing " + newFile.getAbsolutePath());
                         File parent = newFile.getParentFile();
                         if (!parent.exists()) {
                             parent.mkdirs();
