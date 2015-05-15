@@ -37,6 +37,17 @@ Requirements
  In case directory structure in module does not have server home as it's root, you can set <<modulesHome>> configuration option to lay down your 
  module to specified location (i.e <modules/system/layers/base> in WildFly)
 
+
+JBoss Module file structure
+
+ By default JBoss Module is a ZIP file containing basically <module.xml> and it's resources (jars etc). In order to simplify plugin configuration, JBoss Module may 
+ contain several special files, that plugin is able to detect. It does not matter whether those special files are listed as resources in <module.xml> or 
+ where exactly are they located within the zip file. All these special files can be overriden by plugin configuration.
+ 
+ * <<subsystem-snippet.xml>> - sets up subsystem
+
+ * <<socket-binding-snippet.xml>> - sets up socket-binding
+
 Examples
 
 * Install extension to standalone profile

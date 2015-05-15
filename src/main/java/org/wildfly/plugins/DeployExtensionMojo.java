@@ -22,6 +22,7 @@
 package org.wildfly.plugins;
 
 import java.io.File;
+import java.util.List;
 
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.AbstractMojo;
@@ -156,6 +157,7 @@ public class DeployExtensionMojo extends AbstractMojo {
         }
 
         JBossModule module = null;
+        RegisterOptions resolvedOptions = new RegisterOptions();
         if (moduleZip != null) {
             try {
                 module = JBossModule.readFromZipFile(getLog(), moduleZip);
@@ -164,12 +166,13 @@ public class DeployExtensionMojo extends AbstractMojo {
             }
 
             try {
-                module.installTo(modulesHomeAbsolute);
+                List<File> installedFiles = module.installTo(modulesHomeAbsolute);
+                resolvedOptions = resolveBundledXmlSnippets(installedFiles);
+
             } catch (Exception e) {
                 throw new MojoFailureException("Failed to install module : " + e.getMessage());
             }
         }
-        // stay silent if the module.zip does not exist
 
         try {
             RegisterOptions options = new RegisterOptions();
@@ -177,15 +180,37 @@ public class DeployExtensionMojo extends AbstractMojo {
                 options.withExtension(module.getModuleId());
             }
 
-            options.serverConfig(serverConfigAbsolute).serverConfigBackup(serverConfigBackupAbsolute).subsystem(subsystem)
-                    .socketBinding(socketBinding).socketBindingGroups(socketBindingGroups).inserts(edit).failNoMatch(failNoMatch);
+            options.serverConfig(serverConfigAbsolute)
+                .serverConfigBackup(serverConfigBackupAbsolute)
+                .subsystem(subsystem)
+                .socketBinding(socketBinding)
+                .socketBindingGroups(socketBindingGroups)
+                .inserts(edit)
+                .failNoMatch(failNoMatch);
 
-            register(options);
+            resolvedOptions.extend(options);
+            getLog().debug("Proceeding with \n" + resolvedOptions);
+            register(resolvedOptions);
 
         } catch (Exception e) {
             getLog().error(e);
             throw new MojoFailureException("Failed to update server configuration file : " + e.getMessage());
         }
+    }
+    
+    private RegisterOptions resolveBundledXmlSnippets(List<File> installedFiles) {
+        RegisterOptions options = new RegisterOptions();
+        for (File file : installedFiles) {
+            if ("subsystem-snippet.xml".equals(file.getName())) {
+                getLog().debug("Found packaged subsystem snippet "+file.getAbsolutePath());
+                options.subsystem(file);
+            }
+            if ("socket-binding-snippet.xml".equals(file.getName())) {
+                getLog().debug("Found packaged socket-binding snippet "+file.getAbsolutePath());
+                options.socketBinding(file);
+            }
+        }
+        return options;
     }
 
     private File resolveArtifactModuleZip() throws MojoExecutionException {
@@ -196,9 +221,8 @@ public class DeployExtensionMojo extends AbstractMojo {
 
         String gav = String.valueOf(this.artifact);
         // there's no way to set output file name, so we need to parse artifact
-        // we now how output file will look like because we call
-        // maven-dependency-plugin with stripClassifier=true and
-        // stripVersion=true
+        // luckily we now how output file will look like because we call
+        // maven-dependency-plugin with stripClassifier=true and stripVersion=true
         final String tmpOutputDir = "${project.build.directory}/tmp/wildfly-extension-plugin";
         String[] pieces = gav.split(":");
         String moduleTempFile = pieces[1];
@@ -210,12 +234,17 @@ public class DeployExtensionMojo extends AbstractMojo {
             gav += ":zip:module";
         }
         executeMojo(
-                plugin(groupId("org.apache.maven.plugins"), artifactId("maven-dependency-plugin"), version("2.10")),
-                goal("copy"),
-                configuration(element(name("outputDirectory"), tmpOutputDir), element(name("overWriteIfNewer"), "true"),
-                        element(name("overWriteReleases"), "true"), element(name("overWriteSnapshots"), "true"),
-                        element(name("stripClassifier"), "true"), element(name("stripVersion"), "true"), element(name("artifact"), gav)),
-                executionEnvironment(mavenProject, mavenSession, pluginManager));
+            plugin(groupId("org.apache.maven.plugins"), artifactId("maven-dependency-plugin"), version("2.10")),
+            goal("copy"),
+            configuration(
+                    element(name("outputDirectory"), tmpOutputDir),
+                    element(name("overWriteIfNewer"), "true"),
+                    element(name("overWriteReleases"), "true"),
+                    element(name("overWriteSnapshots"), "true"),
+                    element(name("stripClassifier"), "true"),
+                    element(name("stripVersion"), "true"),
+                    element(name("artifact"), gav)),
+            executionEnvironment(mavenProject, mavenSession, pluginManager));
 
         moduleTempFile = String.valueOf(evalPluginParameterExpression(tmpOutputDir + "/" + moduleTempFile));
         return new File(moduleTempFile);

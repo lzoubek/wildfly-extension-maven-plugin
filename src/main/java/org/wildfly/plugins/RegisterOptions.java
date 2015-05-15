@@ -22,6 +22,7 @@
 package org.wildfly.plugins;
 
 import java.io.File;
+import java.util.Arrays;
 
 /**
  * this class just holds all inputs for changes to be made in standalone.xml or domain.xml
@@ -43,6 +44,39 @@ public class RegisterOptions {
 
     public RegisterOptions() {
 
+    }
+    
+    @Override
+    public String toString() {
+        return new StringBuilder("RegisterOptions: [")
+            .append("\n  serverConfig = " + serverConfig)
+            .append("\n  serverConfigBackup = " + serverConfigBackup)
+            .append("\n  moduleId = "+moduleId)
+            .append("\n  subsystem = " + subsystem)
+            .append("\n  socket-binding = " + socketBinding)
+            .append("\n  socketBindingGroups = " + Arrays.toString(socketBindingGroups))
+            .append("\n  edit = " + Arrays.toString(inserts))
+            .append("\n  failNoMatch = " + failNoMatch)
+            .append("\n]")
+            .toString();
+    }
+    
+    /**
+     * merge data from another instance to this instance, but do not overwrite non-null values with null values
+     * @param options another instance
+     * @return
+     */
+    public RegisterOptions extend(RegisterOptions options) {
+        this.serverConfig = options.serverConfig == null ? this.serverConfig : options.serverConfig;
+        this.serverConfigBackup = options.serverConfigBackup == null ? this.serverConfigBackup : options.serverConfigBackup;
+        this.subsystem = options.subsystem == null ? this.subsystem : options.subsystem;
+        this.socketBinding = options.socketBinding == null ? this.socketBinding : options.socketBinding;
+        this.socketBindingGroups = options.socketBindingGroups == null ? this.socketBindingGroups : options.socketBindingGroups;
+        this.inserts = options.inserts == null ? this.inserts : options.inserts;
+        this.removes = options.removes == null ? this.removes : options.removes;
+        this.moduleId = options.moduleId == null ? this.moduleId : options.moduleId;
+        this.failNoMatch = options.failNoMatch;
+        return this;
     }
 
     public RegisterOptions failNoMatch(boolean failNoMatch) {

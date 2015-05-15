@@ -39,8 +39,6 @@ public class RegisterExtension {
      * registers extension to standalone.xml
      * 
      * @param options
-     * @param destFile output file (standalone.xml or domain.xml with new stuff)
-     * @param moduleId ID of JBoss Module to register as an JBoss extension
      * @throws Exception
      */
     public void register(RegisterOptions options) throws Exception {

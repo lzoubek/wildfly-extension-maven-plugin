@@ -76,7 +76,7 @@ public class JBossModule {
             zin = new ZipInputStream(bin);
             ZipEntry ze = null;
             while ((ze = zin.getNextEntry()) != null) {
-                if (ze.getName().endsWith("module.xml")) {
+                if (ze.getName().endsWith("main/module.xml")) {
                     moduleXmlFound = true;
                     DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
                     DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
@@ -125,7 +125,14 @@ public class JBossModule {
         return m;
     }
 
-    public void installTo(File jbossHome) throws Exception {
+    /**
+     * installs JBossModule to given directory
+     * @param jbossHome target directory to install module
+     * @return list of installed files
+     * @throws Exception
+     */
+    public List<File> installTo(File jbossHome) throws Exception {
+        List<File> installedFiles = new ArrayList<File>();
         if (isZip) {
             ZipInputStream zin = null;
             FileOutputStream fos;
@@ -145,6 +152,7 @@ public class JBossModule {
                         fos = new FileOutputStream(newFile);
                         IOUtil.copy(zin, fos);
                         IOUtil.close(fos);
+                        installedFiles.add(newFile);
                     }
                 }
             } finally {
@@ -172,13 +180,15 @@ public class JBossModule {
                 }
                 if (resource.isFile()) {
                     FileUtils.copyFileToDirectory(resource, targetDir);
+                    installedFiles.add(resource);
                 } else if (resource.isDirectory()) {
                     FileUtils.copyDirectoryStructure(resource, targetDir);
                 }
             }
             FileUtils.copyFileToDirectory(moduleFile, targetDir);
         }
-
+        return installedFiles;
     }
+    
 
 }
