@@ -129,6 +129,12 @@ public class DeployExtensionMojo extends AbstractMojo {
     @Parameter(defaultValue = "false")
     private boolean skipDeploy;
 
+    /**
+     * Whether to register it as an extension
+     */
+    @Parameter(defaultValue = "true")
+    private boolean registerExtension;
+
     @Component
     private MavenProject mavenProject;
 
@@ -186,6 +192,7 @@ public class DeployExtensionMojo extends AbstractMojo {
                 .socketBinding(socketBinding)
                 .socketBindingGroups(socketBindingGroups)
                 .inserts(edit)
+                .registerExtension(registerExtension)
                 .failNoMatch(failNoMatch);
 
             resolvedOptions.extend(options);

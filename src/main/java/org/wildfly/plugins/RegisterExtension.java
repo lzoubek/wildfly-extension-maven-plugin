@@ -44,7 +44,7 @@ public class RegisterExtension {
     public void register(RegisterOptions options) throws Exception {
         List<Insert> inserts = new ArrayList<Insert>();
         inserts.addAll(Arrays.asList(options.getInserts()));
-        if (options.getModuleId() != null) {
+        if (options.shouldRegisterExtension() && options.getModuleId() != null) {
             log.info("Register extension module=" + options.getModuleId());
             inserts.add(new Insert("/server/extensions", "<extension module=\"" + options.getModuleId() + "\"/>"));
         }
