@@ -25,7 +25,7 @@
 
   <groupId>org.wildfly.plugins</groupId>
   <artifactId>wildfly-extension-maven-plugin</artifactId>
-  <version>0.7.0</version>
+  <version>0.7.1</version>
   <packaging>maven-plugin</packaging>
 
   <name>Wildfly Extension Installer Maven Plugin</name>

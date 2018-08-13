@@ -41,6 +41,7 @@ public class RegisterOptions {
     String[] removes;
     private String moduleId;
     private boolean failNoMatch;
+    private boolean registerExtension = true;
 
     public RegisterOptions() {
 
@@ -76,6 +77,7 @@ public class RegisterOptions {
         this.removes = options.removes == null ? this.removes : options.removes;
         this.moduleId = options.moduleId == null ? this.moduleId : options.moduleId;
         this.failNoMatch = options.failNoMatch;
+        this.registerExtension = options.registerExtension;
         return this;
     }
 
@@ -116,6 +118,11 @@ public class RegisterOptions {
 
     public RegisterOptions inserts(Insert[] inserts) {
         this.inserts = inserts;
+        return this;
+    }
+
+    public RegisterOptions registerExtension(boolean register){
+        this.registerExtension = register;
         return this;
     }
 
@@ -166,4 +173,7 @@ public class RegisterOptions {
         return failNoMatch;
     }
 
+    public boolean shouldRegisterExtension(){
+        return registerExtension;
+    }
 }

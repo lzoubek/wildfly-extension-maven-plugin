@@ -64,7 +64,7 @@ Examples
                     <plugin>
                          <groupId>org.wildfly.plugins</groupId>
                          <artifactId>wildfly-extension-maven-plugin</artifactId>
-                         <version>0.7.0</version>
+                         <version>0.7.1</version>
                          <configuration>
                              <moduleZip>${project.build.directory}/module.zip</moduleZip>
                              <jbossHome>/jboss/wildfly-8.1.0.Final</jbossHome>
@@ -103,7 +103,7 @@ Examples
                     <plugin>
                          <groupId>org.wildfly.plugins</groupId>
                          <artifactId>wildfly-extension-maven-plugin</artifactId>
-                         <version>0.7.0</version>
+                         <version>0.7.1</version>
                          <configuration>
                              <artifact>groupId:artifactId:1.0.0-SNAPSHOT</artifact>
                              <jbossHome>/jboss/wildfly-8.1.0.Final</jbossHome>
@@ -139,7 +139,7 @@ Examples
                     <plugin>
                          <groupId>org.wildfly.plugins</groupId>
                          <artifactId>wildfly-extension-maven-plugin</artifactId>
-                         <version>0.7.0</version>
+                         <version>0.7.1</version>
                          <configuration>
                              <jbossHome>/jboss/wildfly-8.1.0.Final</jbossHome>
                              <serverConfig>standalone/configuration/standalone.xml</serverConfig>
